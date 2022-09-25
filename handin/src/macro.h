@@ -1,15 +1,11 @@
-#ifndef MYDEBUG_H
-#define MYDEBUG_H
+/* *
+* @file macro.h
+* @brief define the macros used in the lab
+*/
 
+#ifndef MYMACRO_H
+#define MYMACRO_H
 
-#include <netinet/ether.h>
-#include <arpa/inet.h>
-
-const uint32_t sizethhdr = sizeof(struct ethhdr);
-
-typedef int (*frameReceiveCallback)(const void*, const void*, int, int);
-
-#define BYTE_IN_ROW 0x10
 #define errhandle(...) {\
     fprintf(stderr,__VA_ARGS__);\
     return -1;\
