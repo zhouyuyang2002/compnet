@@ -1,6 +1,6 @@
 #include "device.h"
 #include "packetio.h"
-#include "debug.h"
+#include "name2mac.h"
 
 #include <pcap/pcap.h>
 
@@ -44,9 +44,11 @@ int main(){
         puts("");
     }
 
-    sendFrame(msg, strlen(msg), 0x0806, d_manager[0]->mac_addr, 0);
+    sendFrame(msg, strlen(msg), 0x0800, d_manager[0]->mac_addr, 0);
     setFrameReceiveCallback(egCallback, 0);
     sleep(1);
-    receiveAllFrame(0, 5);
+    int num_received = 0;
+    while (num_received < 5)
+        num_received += receiveAllFrame(0, 5);
     return 0;
 }

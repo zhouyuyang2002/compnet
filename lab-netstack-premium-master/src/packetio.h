@@ -1,13 +1,14 @@
-
-
 /* *
 * @file packetio . h
 * @brief Library supporting sending / receiving Ethernet II frames .
 */
+
 #ifndef PACKETIO_H
 #define PACKETIO_H
 #include "device.h"
-#include "debug.h"
+#include "constant.h"
+#include "macro.h"
+#include "type.h"
 #include <netinet/ether.h>
 #include <arpa/inet.h>
 /* *
@@ -52,20 +53,14 @@ int ethtype, const void *destmac, int id){
     delete[] framebuf;
     return 0;
 }
+
 /* *
 * @brief Register a callback function to be called each time an
+* Ethernet II frame was received .
 *
-Ethernet II frame was received .
-*
-* @param callback the callback function .
-
-
-
-
-* @return 0 on success , -1 on error .
-* @see f r a m e R e c e i v e C a l l b a c k
+* @param callback the callback function.
+* @return 0 on success , -1 on error.
 */
-
 int setFrameReceiveCallback(frameReceiveCallback callback, int id){
     if (id < 0 || id >= d_manager.count())
         errhandle("Illegal decive index\n");
@@ -76,8 +71,16 @@ int setFrameReceiveCallback(frameReceiveCallback callback, int id){
     return 0;
 }
 
+/* *
+* @brief try to receive specific number of Ethernet frames from device ID id.
+*
+* @param id The Index of device to receive the package.
+* @param frame_count A number,-1 represents receiving until error occurs,
+* 0-65535 represents the number of packet expected to receive.
+* @return the number of packages received,
+*/
 int receiveAllFrame(int id, int frame_count){
-    if (id < 0 || id >= d_manager.count())
+    if (id < -1 || id >= d_manager.count())
         errhandle("Illegal decive index\n");
     DeviceNode* device = d_manager[id];
     if (device->receive_handler == NULL)
@@ -86,30 +89,24 @@ int receiveAllFrame(int id, int frame_count){
         errhandle("Illegal frame_count");
     struct pcap_pkthdr* pkt_header = NULL;
     const u_char* framebuf = NULL;
+    int num_received = 0;
 
-    #define checkrem(); if (frame_count > 0)\
-        fprintf(stderr, "%d packets remain unrecieved", frame_count);
     while (true){
         int result = pcap_next_ex(device->receive_handler, &pkt_header, &framebuf);
-        if (result == 0){
-            checkrem();
-            errhandle("Time out");
+        if (result == 0) // None of the package received
+            return num_received;
+        if (result < 0){
+            fprintf(stderr, "error after receiving %d packets\n, pcap_next_ex(): %s", 
+                            num_received, pcap_geterr(device->receive_handler));
+            return num_received;
         }
-        if (result == -1){
-            checkrem();
-            errhandle("error, pcap_next_ex(): %s", pcap_geterr(device->receive_handler));
-        }
-        if (result == -2){
-            checkrem();
-            break;
-        }
+        ++num_received;
         device->handInPacket(pkt_header, framebuf);
         if (frame_count != -1)
             if ((--frame_count) == 0)
                 break;
     }
-    #undef checkrem();
-    return 0;
+    return num_received;
 }
 
 

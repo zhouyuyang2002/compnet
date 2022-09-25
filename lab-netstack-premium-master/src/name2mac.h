@@ -1,7 +1,13 @@
+/* *
+* @file name2mac.h
+* @brief find the Mac Address of specific device
+*/
+
 #ifndef NAME2MAC_H
 #define NAME2MAC_H
 
-#include "debug.h"
+#include "macro.h"
+#include <cstring>
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
@@ -15,7 +21,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-
+/* *
+* find the Mac Address of specific device
+* @param device the name of the device request for Mac address
+* @param mac_addr the pointer to the memory used to save the Mac address
+* @return 0 on success, 1 on failure.
+*/
 int findMac(const char* device, uint8_t* mac_addr){
     struct ifreq ifr;
     int sockfid;

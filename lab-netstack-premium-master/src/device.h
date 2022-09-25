@@ -1,5 +1,5 @@
 /* *
-* @file device . h
+* @file device.cpp
 * @brief Library supporting network device management .
 */
 
@@ -10,8 +10,10 @@
 #include <cstdlib>
 #include <algorithm>
 #include <vector>
+#include "type.h"
+#include "macro.h"
+#include "constant.h"
 #include "name2mac.h"
-#include "debug.h"
 
 /* *
 * Check whether the device name exists in the network.
@@ -42,12 +44,12 @@ bool checkDevice(const char * device){
 }
 
 struct DeviceNode{
-    char* device_names;
-    pcap_t* receive_handler;
-    pcap_t* send_handler;
-    frameReceiveCallback callback;
-    uint8_t mac_addr[8];
-    int index;
+    char* device_names;             //The name of device 
+    pcap_t* receive_handler;        //The handler used to receive messages
+    pcap_t* send_handler;           //The handler used to send messages
+    frameReceiveCallback callback;  //The default callback function
+    uint8_t mac_addr[8];            //Mac address of the device
+    int index;                      //The index of the device
     
     DeviceNode(){
         device_names = 0;
@@ -64,19 +66,37 @@ struct DeviceNode{
             pcap_close(send_handler);
     }
 
+    /* *
+    * Check if the name of the device is equal to device
+    * @param device The name of device to check out
+    * @return True on same, False on different
+    */
     bool isEqualDevice(const char* device){
         return strcmp(device, device_names) == 0;
     }
-    
+    /* *
+    * Set up the callback function of the device
+    * @param __callback__ the name of __callback__ function to set up
+    */
     void setCallback(frameReceiveCallback __callback__){
         callback = __callback__;
     }
+
+
+    /* *
+    * Initalize the deviceNode with name device
+    * @param device The name of device used to set up
+    * @return 0 on success, -1 on failure. 
+    */
     int setDevice(const char* device){
 
         char errbuf[PCAP_ERRBUF_SIZE];
         int len = strlen(device);
         device_names = new char[len + 1];
         strcpy(device_names, device);
+
+        if (findMac(device, mac_addr) == -1)
+            errhandle("fail to find mac address in setDevice()\n");
 
         send_handler = pcap_create(device_names, errbuf);
         if (send_handler == NULL)
@@ -88,17 +108,32 @@ struct DeviceNode{
 
         receive_handler = pcap_create(device_names, errbuf);
         if (receive_handler == NULL)
-            errhandle("fail to create a send_handler, err: %s\n", errbuf);
+            errhandle("fail to create a receive_handler, err: %s\n", errbuf);
+       
+        if (pcap_setnonblock(receive_handler, true, errbuf) != 0)
+            errhandle("fail to set non-block type of receive_handler, err: %s\n", errbuf)
         if (pcap_activate(receive_handler) < 0)
-            errhandle("fail to activate a send_handler, err: %s\n", pcap_geterr(send_handler));
-        if (pcap_setdirection(receive_handler, PCAP_D_IN) != 0)
-            errhandle("fail to set a send_handler\n");
-
-        if (findMac(device, mac_addr) == -1)
-            errhandle("fail to find mac address in setDevice()\n");
+            errhandle("fail to activate a receive_handler, err: %s\n", pcap_geterr(send_handler)); char compilebuf[COMPILEBUF_SIZE];
+        memset(compilebuf, 0, sizeof(compilebuf));
+        sprintf(compilebuf, "ether dst %02x:%02x:%02x:%02x:%02x:%02x", 
+                (unsigned char)mac_addr[0], (unsigned char)mac_addr[1], (unsigned char)mac_addr[2],
+                (unsigned char)mac_addr[3], (unsigned char)mac_addr[4], (unsigned char)mac_addr[5]);
+        //sprintf(compilebuf, "ether dst %s",device);
+        printf("%s\n", compilebuf);
+        struct bpf_program fp;
+        if (pcap_compile(receive_handler, &fp, compilebuf, 0, PCAP_NETMASK_UNKNOWN) != 0)   
+            errhandle("fail to compile the filter, err: %s\n", pcap_geterr(receive_handler));
+        if (pcap_setfilter(receive_handler, &fp) != 0)
+            errhandle("fail to set the filter, err: %s\n", pcap_geterr(receive_handler));
         return 0;
     }
 
+    /* *
+    * Handle the infomation of the package founc by libpcap
+    * @param pkt_header the header of the packet found
+    * @param framebuf the information of the packet found
+    * @return 0 on success, -1 on failure. 
+    */
     int handInPacket(struct pcap_pkthdr* pkt_header, const u_char* framebuf){
         if (callback == NULL){
             printf("Warning: you have not set callback!");
@@ -113,7 +148,8 @@ struct DeviceNode{
             puts("");
         }
         else{
-            const uint8_t* src_mac = framebuf;
+            struct ethhdr framehdr = *((struct ethhdr*)framebuf);
+            const uint8_t* src_mac = framehdr.h_source;
             const u_char* buffer = framebuf + sizethhdr;
             callback(buffer, src_mac, pkt_header->caplen - sizethhdr, index);
         }
@@ -137,7 +173,10 @@ struct DeviceManager{
             delete device_list[i];
         delete[] device_list;
     }
-
+    /* *
+    * Return the pointer of the index-th DeviceNode
+    * @param index The index of device to find
+    */
     DeviceNode* operator [](const int index){
         if (index < 0 || index > device_count){
             fprintf(stderr, "Invalid index in deviceManager");
@@ -145,7 +184,12 @@ struct DeviceManager{
         }
         return device_list[index];
     }
-
+    /* *
+    * Add a device to the library for sending / receiving packets .
+    *
+    * @param device Name of network device to send / receive packet on .
+    * @return A non - negative _device - ID_ on success , -1 on error .
+    */
     int addDevice(const char* device){
         if (checkDevice(device) == -1)
             errhandle("Invalid device name");
@@ -169,7 +213,13 @@ struct DeviceManager{
             device_list[index]->index = index;
         return index;
     }
-
+    /* *
+    * Find a device added by ‘ addDevice ‘.
+    *
+    * @param device Name of the network device .
+    * @return A non - negative _device - ID_ on success , -1 if no such device
+    * was found .
+    */
     int findDevice(const char* device){
         for (int i = 0; i < device_count; i++)
             if (device_list[i]->isEqualDevice(device))
