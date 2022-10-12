@@ -13,7 +13,9 @@
 #include "type.h"
 #include "macro.h"
 #include "constant.h"
-#include "name2mac.h"
+#include "name2addr.h"
+#include "iptable.h"
+#include "routing.h"
 
 /* *
 * Check whether the device name exists in the network.
@@ -21,6 +23,8 @@
 * @param device Name of network device to check
 * @return True on success , False on error .
 */
+
+
 bool checkDevice(const char * device){
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_if_t *alldevs, *it;
@@ -44,17 +48,20 @@ bool checkDevice(const char * device){
 }
 
 struct DeviceNode{
-    char* device_names;             //The name of device 
-    pcap_t* receive_handler;        //The handler used to receive messages
-    pcap_t* send_handler;           //The handler used to send messages
-    frameReceiveCallback callback;  //The default callback function
-    uint8_t mac_addr[8];            //Mac address of the device
-    int index;                      //The index of the device
+    char* device_names;                  //The name of device 
+    pcap_t* receive_handler;             //The handler used to receive messages
+    pcap_t* send_handler;                //The handler used to send messages
+    frameReceiveCallback callback;       //The default Link Layer callback function
+    IPPacketReceiveCallback ip_callback; //The default IP Layer callback function
+    uint8_t mac_addr[8];                 //Mac address of the device
+    struct in_addr ip_addr;              //IP address of the device
+    int index;                           //The index of the device
     
     DeviceNode(){
         device_names = 0;
         receive_handler = NULL;
         send_handler = NULL;
+        ip_callback = NULL;
         callback = NULL;
     }
     ~DeviceNode(){
@@ -74,12 +81,23 @@ struct DeviceNode{
     bool isEqualDevice(const char* device){
         return strcmp(device, device_names) == 0;
     }
+
+    bool isEqualIP(const in_addr ip){
+        return ip_addr.s_addr == ip.s_addr;
+    }
     /* *
     * Set up the callback function of the device
     * @param __callback__ the name of __callback__ function to set up
     */
     void setCallback(frameReceiveCallback __callback__){
         callback = __callback__;
+    }
+     /* *
+    * Set up the callback function of the device
+    * @param __callback__ the name of __callback__ function to set up
+    */
+    void setIPCallback(IPPacketReceiveCallback __callback__){
+        ip_callback = __callback__;
     }
 
 
@@ -97,6 +115,8 @@ struct DeviceNode{
 
         if (findMac(device, mac_addr) == -1)
             errhandle("fail to find mac address in setDevice()\n");
+        if (findIP(device, ip_addr) == -1)
+            errhandle("fail to find ip address in setDevice()\n");
 
         send_handler = pcap_create(device_names, errbuf);
         if (send_handler == NULL)
@@ -111,15 +131,18 @@ struct DeviceNode{
             errhandle("fail to create a receive_handler, err: %s\n", errbuf);
        
         if (pcap_setnonblock(receive_handler, true, errbuf) != 0)
-            errhandle("fail to set non-block type of receive_handler, err: %s\n", errbuf)
+            errhandle("fail to set non-block type of receive_handler, err: %s\n", errbuf);        
+        if (pcap_set_timeout(receive_handler, 10) != 0)
+            errhandle("fail to set time-out");
         if (pcap_activate(receive_handler) < 0)
-            errhandle("fail to activate a receive_handler, err: %s\n", pcap_geterr(send_handler)); char compilebuf[COMPILEBUF_SIZE];
+            errhandle("fail to activate a receive_handler, err: %s\n", pcap_geterr(send_handler)); 
+            
+        char compilebuf[COMPILEBUF_SIZE];
         memset(compilebuf, 0, sizeof(compilebuf));
-        sprintf(compilebuf, "ether dst %02x:%02x:%02x:%02x:%02x:%02x", 
+        sprintf(compilebuf, "ether dst %02x:%02x:%02x:%02x:%02x:%02x or ether dst ff:ff:ff:ff:ff:ff", 
                 (unsigned char)mac_addr[0], (unsigned char)mac_addr[1], (unsigned char)mac_addr[2],
                 (unsigned char)mac_addr[3], (unsigned char)mac_addr[4], (unsigned char)mac_addr[5]);
-        //sprintf(compilebuf, "ether dst %s",device);
-        printf("%s\n", compilebuf);
+        //printf("%s\n", compilebuf);
         struct bpf_program fp;
         if (pcap_compile(receive_handler, &fp, compilebuf, 0, PCAP_NETMASK_UNKNOWN) != 0)   
             errhandle("fail to compile the filter, err: %s\n", pcap_geterr(receive_handler));
@@ -127,41 +150,13 @@ struct DeviceNode{
             errhandle("fail to set the filter, err: %s\n", pcap_geterr(receive_handler));
         return 0;
     }
-
-    /* *
-    * Handle the infomation of the package founc by libpcap
-    * @param pkt_header the header of the packet found
-    * @param framebuf the information of the packet found
-    * @return 0 on success, -1 on failure. 
-    */
-    int handInPacket(struct pcap_pkthdr* pkt_header, const u_char* framebuf){
-        if (callback == NULL){
-            printf("Warning: you have not set callback!");
-            printf("Capture Package size: %d\n",pkt_header->caplen);
-            printf("Capture Package on Device: %s\n", device_names);
-            printf("Device Mac Address %02x:%02x:%02x:%02x:%02x:%02x\n", mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-            for (int i = 0; i < pkt_header->caplen; i++){
-                printf("%02x ", framebuf[i]);
-                if ((i + 1) % BYTE_IN_ROW == 0) puts("");
-            }
-            puts("");
-            puts("");
-        }
-        else{
-            struct ethhdr framehdr = *((struct ethhdr*)framebuf);
-            const uint8_t* src_mac = framehdr.h_source;
-            const u_char* buffer = framebuf + sizethhdr;
-            callback(buffer, src_mac, pkt_header->caplen - sizethhdr, index);
-        }
-
-        return 0;
-    }
+    
 };
 
 struct DeviceManager{
-    DeviceNode** device_list;  //The pointer to the piece of memory, to save the pointer of DeviceNode
-    int device_count;          //The number of devices in the manager
-    int device_bound;          //The maximum number of devices can be saved now
+    DeviceNode** device_list;
+    int device_count;
+    int device_bound;
 
     DeviceManager(){
         device_count = 0;

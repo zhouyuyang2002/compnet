@@ -16,4 +16,15 @@
     (unsigned char)mac_addr[0],(unsigned char)mac_addr[1],(unsigned char)mac_addr[2],\
     (unsigned char)mac_addr[3],(unsigned char)mac_addr[4],(unsigned char)mac_addr[5]);
 
+#define printip(ip_addr); {\
+    struct in_addr temp;\
+    temp.s_addr = htonl(ip_addr.s_addr);\
+    printf("%s",inet_ntoa(temp));}
+
+/*
+* Swap two items
+*/
+template<class T> void swap(T &a,T &b){
+    T temp = a; a = b; b = temp;
+}
 #endif
