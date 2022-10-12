@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.1415926-2.3-0.9997.5 (MiKTeX 2.9) (preloaded format=xelatex 2020.7.11)  25 SEP 2022 12:06
+This is XeTeX, Version 3.1415926-2.3-0.9997.5 (MiKTeX 2.9) (preloaded format=xelatex 2020.7.11)  12 OCT 2022 08:10
 entering extended mode
 **readme.tex
 (C:\Users\10679\Documents\GitHub\compnet\reports\readme.tex
@@ -1198,7 +1198,14 @@ Package: listings 2007/02/22 1.4 (Carsten Heinz)
 (C:\CTEX\MiKTeX\tex\generic\pgf\frontendlayer\tikz\libraries\tikzlibrarypositio
 ning.code.tex
 File: tikzlibrarypositioning.code.tex 2008/10/06 v2.10 (rcs-revision 1.7)
-) (C:\Users\10679\Documents\GitHub\compnet\reports\readme.aux)
+) (C:\Users\10679\Documents\GitHub\compnet\reports\readme.aux
+
+LaTeX Warning: Label `fig:CP5-1' multiply defined.
+
+
+LaTeX Warning: Label `fig:CP5-1' multiply defined.
+
+)
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 40.
 LaTeX Font Info:    ... okay on input line 40.
 LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 40.
@@ -1217,8 +1224,7 @@ LaTeX Font Info:    Checking defaults for EU1/lmr/m/n on input line 40.
 LaTeX Font Info:    ... okay on input line 40.
 LaTeX Font Info:    Checking defaults for T3/cmr/m/n on input line 40.
 LaTeX Font Info:    Try loading font information for T3+cmr on input line 40.
-
-(C:\CTEX\MiKTeX\tex\latex\tipa\t3cmr.fd
+ (C:\CTEX\MiKTeX\tex\latex\tipa\t3cmr.fd
 File: t3cmr.fd 2001/12/31 TIPA font definitions
 )
 LaTeX Font Info:    ... okay on input line 40.
@@ -1363,16 +1369,6 @@ File: eu1lmtt.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 Requested font "[lmmono10-regular]" at 10.95pt
  -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmmono10-regular.otf
-Requested font "[lmroman12-regular]:mapping=tex-text" at 12.0pt
- -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmroman12-regular.otf
-Requested font "[lmroman12-bold]:mapping=tex-text" at 12.0pt
- -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmroman12-bold.otf
- [1
-
-]
-Requested font "[lmroman10-bold]:mapping=tex-text" at 10.95pt
- -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmroman10-bold.otf
- [2] [3] [4]
 Requested font "[lmroman8-regular]:mapping=tex-text" at 8.0pt
  -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmroman8-regular.otf
 Requested font "[lmroman6-regular]:mapping=tex-text" at 6.0pt
@@ -1395,7 +1391,7 @@ Requested font "cmex8" at 8.0pt
  -> cmex8
 Requested font "cmex7" at 6.0pt
  -> cmex7
-LaTeX Font Info:    Try loading font information for U+msa on input line 289.
+LaTeX Font Info:    Try loading font information for U+msa on input line 54.
 
 (C:\CTEX\MiKTeX\tex\latex\amsfonts\umsa.fd
 File: umsa.fd 2009/06/22 v3.00 AMS symbols A
@@ -1406,7 +1402,7 @@ Requested font "msam10" at 8.0pt
  -> msam10
 Requested font "msam7" at 6.0pt
  -> msam7
-LaTeX Font Info:    Try loading font information for U+msb on input line 289.
+LaTeX Font Info:    Try loading font information for U+msb on input line 54.
 
 (C:\CTEX\MiKTeX\tex\latex\amsfonts\umsb.fd
 File: umsb.fd 2009/06/22 v3.00 AMS symbols B
@@ -1439,40 +1435,117 @@ Requested font "cmr8" at 8.0pt
  -> cmr8
 Requested font "cmr6" at 6.0pt
  -> cmr6
+ [1
 
-(C:\CTEX\MiKTeX\tex\latex\listings\lstlang1.sty
+]
+Requested font "[lmroman12-regular]:mapping=tex-text" at 12.0pt
+ -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmroman12-regular.otf
+Requested font "[lmroman12-bold]:mapping=tex-text" at 12.0pt
+ -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmroman12-bold.otf
+ [2]
+Requested font "[lmroman10-bold]:mapping=tex-text" at 10.95pt
+ -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmroman10-bold.otf
+ [3] [4] [5]
+Overfull \hbox (11.1884pt too wide) in paragraph at lines 356--357
+[]\EU1/lmtt/m/n/10.95 void setNextHopMac(uint32_t dst, struct in_addr mask, std
+::pair<macAddress,int>
+ []
+
+[6] [7]
+Requested font "SimSun" at 10.95pt
+ -> C:/Windows/Fonts/simsun.ttc
+Requested font "SimSun/ICU" at 10.95pt
+ -> C:/Windows/Fonts/simsun.ttc
+\g_fontspec_family_SimSun_int=\count334
+Requested font "SimHei/ICU" at 10.95pt
+ -> C:/Windows/Fonts/simhei.ttf
+Requested font "[SIMKAI.TTF]/ICU" at 10.95pt
+ -> C:/WINDOWS/Fonts/SIMKAI.TTF
+Requested font "SimHei/I/ICU" at 10.95pt
+ -> C:/Windows/Fonts/simhei.ttf
+.................................................
+. fontspec info: "no-font-shape"
+. 
+. Could not resolve font SimHei/I (it probably doesn't exist).
+.................................................
+.................................................
+. fontspec info: "defining-font"
+. 
+. Font family 'SimSun(0)' created for font 'SimSun' with options
+. [Ligatures=TeX,BoldFont={SimHei},ItalicFont={[SIMKAI.TTF]}].
+. 
+. This font family consists of the following shapes:
+. 
+. * 'normal' with NFSS spec.:
+. <->"SimSun/ICU:script=latn;language=DFLT;mapping=tex-text;"
+. 
+. * 'bold' with NFSS spec.:
+. <->"SimHei/ICU:script=latn;language=DFLT;mapping=tex-text;"
+. 
+. * 'italic' with NFSS spec.:
+. <->"[SIMKAI.TTF]/ICU:script=latn;language=DFLT;mapping=tex-text;"
+.................................................
+Requested font "SimSun/ICU:script=latn;language=DFLT;mapping=tex-text;" at 10.9
+5pt
+ -> C:/Windows/Fonts/simsun.ttc
+ [8] (C:\CTEX\MiKTeX\tex\latex\listings\lstlang1.sty
 File: lstlang1.sty 2004/09/05 1.3 listings language file
 )
 (C:\CTEX\MiKTeX\tex\latex\listings\lstlang1.sty
 File: lstlang1.sty 2004/09/05 1.3 listings language file
-) [5]
-File: ../lab-netstack-premium-master/checkpoints/CP1.png Graphic file (type QTm
+) [9]
+File: ../lab-netstack-premium-master/checkpoints/CP3.png Graphic file (type QTm
 )
 
-<use  "../lab-netstack-premium-master/checkpoints/CP1.png" >
-File: ../lab-netstack-premium-master/checkpoints/CP2-1.png Graphic file (type Q
+<use  "../lab-netstack-premium-master/checkpoints/CP3.png" >
+Requested font "[lmmono8-regular]" at 8.0pt
+ -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmmono8-regular.otf
+Requested font "[lmmono8-regular]" at 6.0pt
+ -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmmono8-regular.otf
+ [10]
+File: ../lab-netstack-premium-master/checkpoints/CP4-1.png Graphic file (type Q
 Tm)
 
-<use  "../lab-netstack-premium-master/checkpoints/CP2-1.png" >
-File: ../lab-netstack-premium-master/checkpoints/CP2-2.png Graphic file (type Q
+<use  "../lab-netstack-premium-master/checkpoints/CP4-1.png" >
+File: ../lab-netstack-premium-master/checkpoints/CP4-2.png Graphic file (type Q
 Tm)
 
-<use  "../lab-netstack-premium-master/checkpoints/CP2-2.png" >
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 343.
- [6] [7]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 343.
+<use  "../lab-netstack-premium-master/checkpoints/CP4-2.png" >
+File: ../lab-netstack-premium-master/checkpoints/CP4-3.png Graphic file (type Q
+Tm)
+
+<use  "../lab-netstack-premium-master/checkpoints/CP4-3.png" > [11] [12]
+File: ../lab-netstack-premium-master/checkpoints/CP5-1.png Graphic file (type Q
+Tm)
+
+<use  "../lab-netstack-premium-master/checkpoints/CP5-1.png" >
+File: ../lab-netstack-premium-master/checkpoints/CP5-2.png Graphic file (type Q
+Tm)
+
+<use  "../lab-netstack-premium-master/checkpoints/CP5-2.png" > [13]
+File: ../lab-netstack-premium-master/checkpoints/CP6.png Graphic file (type QTm
+)
+
+<use  "../lab-netstack-premium-master/checkpoints/CP6.png" >
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 713.
+ [14] [15]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 713.
 
 (C:\Users\10679\Documents\GitHub\compnet\reports\readme.aux)
-Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 343.
-Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 343.
+Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 713.
+Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 713.
+
+
+LaTeX Warning: There were multiply-defined labels.
+
  ) 
 Here is how much of TeX's memory you used:
- 32822 strings out of 430478
- 618629 string characters out of 3191502
- 697931 words of memory out of 3000000
- 35425 multiletter control sequences out of 15000+200000
- 11181 words of font info for 57 fonts, out of 3000000 for 9000
+ 32880 strings out of 430478
+ 620058 string characters out of 3191502
+ 704355 words of memory out of 3000000
+ 35464 multiletter control sequences out of 15000+200000
+ 11237 words of font info for 64 fonts, out of 3000000 for 9000
  14 hyphenation exceptions out of 8191
  57i,12n,97p,848b,959s stack positions out of 5000i,500n,10000p,200000b,50000s
 
-Output written on readme.pdf (7 pages).
+Output written on readme.pdf (15 pages).

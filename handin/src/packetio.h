@@ -5,12 +5,16 @@
 
 #ifndef PACKETIO_H
 #define PACKETIO_H
+
+#include "mytime.h"
 #include "device.h"
 #include "constant.h"
 #include "macro.h"
 #include "type.h"
 #include <netinet/ether.h>
 #include <arpa/inet.h>
+#include <stdlib.h>
+#include <string.h>
 /* *
 * @brief Encapsulate some data into an Ethernet II frame and send it .
 *
@@ -37,14 +41,15 @@ int ethtype, const void *destmac, int id){
     u_char* framebuf = new u_char[len + sizethhdr];
     memcpy(framebuf + sizethhdr, buf, sizeof(u_char) * len);
     memcpy(framebuf, &framehdr, sizeof(u_char) * sizethhdr);
-
-    printf("Try to send buffer with size: %d\n", len + sizethhdr);
+    
+    /*printf("Try to send buffer with size: %d, tic = %lld\n", len + sizethhdr, (long long)gettime());
     for (int i = 0; i < len + sizethhdr; i++){
         printf("%02x ", (unsigned char)framebuf[i]);
         if (i % 16 == 15) puts("");
     }
     puts("");
-    puts("");
+    puts("");*/
+    
 
     if (pcap_sendpacket(device->send_handler, framebuf, len + sizethhdr) != 0){
         delete[] framebuf;
@@ -72,6 +77,39 @@ int setFrameReceiveCallback(frameReceiveCallback callback, int id){
 }
 
 /* *
+* @brief After receive a packet captureed on specific device, try to handle it
+* using the default function, and print the raw message if the function is not found.
+*
+* @param pkt_header the header of the packet captured.
+* @param framebuf the buffer of the packet captured.
+* @param index the index of the packet captured.
+* @return 0 on success , -1 on error.
+*/
+int LinkHandInPacket(struct pcap_pkthdr* pkt_header, const u_char* framebuf, int index){
+    if (d_manager[index] -> callback == NULL){
+        printf("Warning: you have not set link-layer callback!");
+        printf("Capture Package size: %d\n",pkt_header->caplen);
+        printf("Capture Package on Device: %s\n", d_manager[index] ->device_names);
+        printf("Device Mac Address: ");
+        printmac(d_manager[index] -> mac_addr);
+        puts("");
+        for (int i = 0; i < pkt_header->caplen; i++){
+            printf("%02x ", framebuf[i]);
+            if ((i + 1) % BYTE_IN_ROW == 0) puts("");
+        }
+        puts("");
+        puts("");
+        }
+    else{
+        struct ethhdr framehdr = *((struct ethhdr*)framebuf);
+        const uint8_t* src_mac = framehdr.h_source;
+        const u_char* buffer = framebuf + sizethhdr;
+        uint16_t protocol = ntohs(framehdr.h_proto);
+        d_manager[index] -> callback(buffer, src_mac, pkt_header->caplen - sizethhdr, index, protocol);
+    }
+    return 0;
+}
+/* *
 * @brief try to receive specific number of Ethernet frames from device ID id.
 *
 * @param id The Index of device to receive the package.
@@ -92,16 +130,18 @@ int receiveAllFrame(int id, int frame_count){
     int num_received = 0;
 
     while (true){
+        //printf("tic try to receive: %lld\n", gettime());
         int result = pcap_next_ex(device->receive_handler, &pkt_header, &framebuf);
         if (result == 0) // None of the package received
             return num_received;
+        //printf("tic receive success: %lld\n", (long long)gettime());
         if (result < 0){
             fprintf(stderr, "error after receiving %d packets\n, pcap_next_ex(): %s", 
                             num_received, pcap_geterr(device->receive_handler));
             return num_received;
         }
         ++num_received;
-        device->handInPacket(pkt_header, framebuf);
+        LinkHandInPacket(pkt_header, framebuf, id);
         if (frame_count != -1)
             if ((--frame_count) == 0)
                 break;

@@ -30,7 +30,7 @@
 
 
 \newcommand\E{\mathbb{E}}
-\newcommand{\labid}{1}			% 第几次作业
+\newcommand{\labid}{2}			% 第几次作业
 \newcommand{\name}{Yuyang Zhou} 		% 你的名字
 \newcommand{\id}{2000013061} 	% 你的学号
 
@@ -51,22 +51,55 @@
     \end{center}
 
 	\section{Implemented}
-		\par The features implemented are \texttt{PT1, PT2}. and this document include the answer of \texttt{WT1}
-		
-	\section{WT1}
+		\par The features implemented are \texttt{PT1, PT2, PT3}. and this document include the answer of \texttt{WT2 $\sim$ WT4}, \texttt{CP3 $\sim$ CP6}
 	
-		\par 1. there are 827 frame in total
-		\par 2. ff:ff:ff:ff:ff:ff
+	\section{WT2}
+	
+		\par (1) The following in ARP Reply is the same as
+		the Sender MAC address in ARP Request:
 		
-		The destination address is special because it is a boardcast message. 
-		The computer with MAC address 6a:15:0a:ba:9b:7c doesn't know which computer have IP address 10.0.0.88/10.0.0.24, and it boardcast the message to all computers, trying to find the one with IP address 10.0.0.88/10.0.0.24.
-		\par 3. 0x15 in hexademical, 21 in demical 
+		\begin{itemize}
+			\item the Receiver MAC address in ARP Reply.
+			\item the destination MAC address in the Ethernet Header in the last Hop.
+		\end{itemize}
 		
+		\par (2) 1674 non-fragment packets in total.
 		
+		\par (3) The length of \texttt{IPv6} header is 40 bytes, while length of \texttt{IPv4} header is 20 bytes.
+	\section{WT3 \& WT4}
+	
+		\par The answer of these two problems are shown below, because the answer are highly related to each other. I use an ARP-Like protocol to implement routing, and find the MAC address of the next hop. The detail is shown below.
+		
+		\begin{itemize}
+			\item when I use ARP in server $A$, trying to find the information about server $D$, I need to broadcast ARP-request to all devices which directly connected to server $A$. and when server $B$ receive an ARP-request from MAC address $C$, server $B$ knows that: 
+			
+			* If I want to send any message to server $A$, I can send along the route that server send an ARP-request to be backwards, and the route is surely exists if all servers works well.
+				
+			\item So server $B$ can directly set the following rule: If I want to send a message to $A$, the next hop address is $C$. The correctness is shown above. The same holds for ARP-reply request.
+			
+			\item If server $B$ contains the next hop to the destination, or server $B$ itself is just the destination, it can simply send an ARP-reply back to server $A$. Also the send-back procedure doesn't require any ARP-request. This is because that on the route server $A$ send the ARP-request to it, the next hop to server $A$ has already been set-up accroding to the rule above, so every next-hop-query is success along the route.
+			
+			\item Otherwise, server $B$ will try to broadcast the ARP-request to all its neighbors. but it may cause infinity ARP requests if we doesn't handle it well. So I design the following broadcast rule:
+			
+			* If server $A$ have not send any message to me, or I have not broadcast any information about server $D$, I will broadcast the message; otherwise, I will not try to broadcast it, and there is no reply.
+			
+			\item The rule above works well if there are no host broke down, and no new servers add in. and it will not cause request loop. Also it could give a really low delay(lower than 100ms in testing) even we try to send a message to a new server.
+			
+			\item One of ways to improve it is to restart server in some specific situations, which could help to solve the broke down server, or the new added server. But it may be a bit complex, so I doesn't implement it. 
+		\end{itemize}
+		
+		Using the ARP-like protocol shown above, I can always find the MAC address for the next-hop, and the MAC address of the destination, if the network is connected and static. and these imformations can be used in \texttt{sendFrames}.
+	
 	\section{Code Arrangement}
 	
 	\subsection*{macro.h}
 		\par define the macros used in the following programs.
+		
+		\begin{itemize}
+		\item \texttt{swap(T \&a, T \&b)}
+		
+		* Swap two items
+		\end{itemize}
 		
 	\subsection*{constant.h}
 		\par define the constants used in the following programs.
@@ -74,8 +107,8 @@
 	\subsection*{type.h}
 		\par define the specific types used in the following programs.
 		
-	\subsection*{name2mac.h}
-		\par find the Mac Address(actually hardware address) of specific device
+	\subsection*{name2addr.h}
+		\par find the Mac Address(actually hardware address) \& IP Address of specific device
 	\begin{itemize}
 		\item \texttt{findMac(const char* device, uint8\_t* mac\_addr)}
 		
@@ -87,6 +120,17 @@
 		Mac address
 		
 		* @return 0 on success, 1 on failure.
+		
+		\item \texttt{
+			findIP(const char* device, struct in\_addr \&ip\_addr) }
+		
+		* find the IP Address of specific device
+		
+		* @param device the name of the device request for Mac address
+		
+		* @param ip\_addr the pointer to the memory used to save the IP address
+		
+		* @return 0 on success, -1 on failure.
 	\end{itemize}
 	
 		
@@ -119,7 +163,7 @@
 			* @return A non - negative \_device - ID\_ on success , -1 if no such device was found .
 		\end{itemize}
 		
-		In order to manage this, the code two structures \texttt{DeviceNode} and \texttt{DeviceManager}, and implements the following methods
+		In order to manage this, the code contains two structures \texttt{DeviceNode} and \texttt{DeviceManager}, and implements the following methods
 		
 		\begin{itemize}
 			\item \texttt{DeviceNode}
@@ -128,8 +172,10 @@
 				\item \texttt{char* device\_names} The name of the device 
 				\item \texttt{pcap\_t* receive\_handler} The handler used to receive messages
 				\item \texttt{pcap\_t* send\_handler} The handler used to send messages
-				\item \texttt{frameReceiveCallback callback} The default callback function
+				\item \texttt{frameReceiveCallback callback} The default link layer callback function
+				\item \texttt{IPPacketReceiveCallback callback} The default IP Layer callback function
 				\item \texttt{uint8\_t mac\_addr[8]} Mac address of the device
+				\item \texttt{struct in\_addr ip\_addr} IP address of the device
 				\item \texttt{int index} The index of the device
 				\item \texttt{bool isEqualDevice(const char* device)}
 				
@@ -141,7 +187,13 @@
 				
 				\item \texttt{void setCallback(frameReceiveCallback \_\_callback\_\_)}
 				
-				* Set up the callback function of the device
+				* Set up the link layer callback function of the device
+				
+				* @param \_\_callback\_\_ the pointer of callback function to set up
+				
+				\item \texttt{void setIPCallback(IPPacketReceiveCallback \_\_callback\_\_)}
+				
+				* Set up the IP layer callback function of the device
 				
 				* @param \_\_callback\_\_ the pointer of callback function to set up
 				
@@ -150,16 +202,6 @@
 				* Initalize the deviceNode with name device
 				
 				* @param device The name of device used to set up
-				
-				* @return 0 on success, -1 on failure. 
-				
-				\item \texttt{int handInPacket(struct pcap\_pkthdr* pkt\_header, const u\_char* framebuf)}
-				
-				* Handle the infomation of the package founc by libpcap
-				
-				* @param pkt\_header the header of the packet found
-				
-				* @param framebuf the information of the packet found
 				
 				* @return 0 on success, -1 on failure. 
 				
@@ -227,6 +269,19 @@
 		
 		* @return 0 on success , -1 on error.
 		
+		\item \texttt{
+			int LinkHandInPacket(struct pcap\_pkthdr* pkt\_header, const u\_char* framebuf, int index)}
+			
+			* After receive a packet captureed on specific device, try to handle it using the default function, and print the raw message if the function is not found.
+			
+			* @param pkt\_header the header of the packet captured.
+			
+			* @param framebuf the buffer of the packet captured.
+			
+			* @param index the index of the packet captured.
+			
+			* @return 0 on success , -1 on error.
+		
 		\item \texttt{int receiveAllFrame(int id, int frame\_count)}
 		
 		* try to receive specific number of Ethernet frames from device ID id.
@@ -238,14 +293,144 @@
 		* @return the number of packages received,
 	\end{itemize}
 	
-	\subsection*{main.cpp}
+	\subsection*{iptable.h}
+	
+	\par Library for a data structure which gives the mapping between IP address and the information about IP address.
+	
+	\par We implemented following structure to maintain it.
 		
+		\begin{itemize}
+			\item \texttt{IPTableNode}
+			
+			\begin{itemize}
+				\item \texttt{class T value} The value saved in the trie node.
+				\item \texttt{int child[4]} The index of the 4 childs of the node.
+			\end{itemize}
+			
+			\item \texttt{IPTable}
+			
+			\begin{itemize}
+				\item \texttt{IPTableNode<class T>* mem} the pointer to the memory, which save the nodes in the trie
+				\item \texttt{int node\_released} the number of nodes in the trie
+				\item \texttt{int node\_count} the maximum number of nodes mem can save. 
+				\item \texttt{find(const uint32\_t \&addr)}
+					* find if the information about IP address
+					
+					* @param addr the IP address to be checked
+					
+					* @return 1 on information exist, 0 on not found
+				
+				\item \texttt{class T\& operator [](const uint32\_t \&addr)}
+				
+				* find if the information about IP address, and set the piece of memory if the information is not found
+				
+				* @param addr the IP address to be checked
+				
+				* @return the information
+				
+			\end{itemize}
+		\end{itemize}
+		
+	\subsection*{routing.h}
+	
+	\par Library for a data structure which gives the mapping between IP address and the information about IP address.
+	
+	\par We implemented following structure to maintain it.
+	
 	\begin{itemize}
-		\item \texttt{msg} test message to send.
+		\item \texttt{RoutingTableNode}
 		
-		\item \texttt{egCallback(const void* \_\_buffer, const void* \_\_mac\_addr, int len, int index))}
+		\begin{itemize}
+			\item 
+			\texttt{bool rule} if the node contains a routing rule
+			\item \texttt{std::pair<macAddress, int> value} the routing rule in (next hop address, next hop device index) format
+			\item \texttt{int child[2]} the index of child node.
+		\end{itemize}
 		
-		* Example Callback function.
+		\item \texttt{RoutingTable}
+		
+		\begin{itemize}
+			\item \texttt{IPTableNode* mem} the pointer to the memory, which save the nodes in the trie
+			\item \texttt{int node\_released} the number of nodes in the trie
+			\item \texttt{int node\_count} the maximum number of nodes mem can save. 
+			\item \texttt{void setNextHopMac(uint32\_t dst, struct in\_addr mask, std::pair<macAddress,int> value)}
+			
+			* set the given routing rule
+			
+			* @param dst the destination 
+			
+			* @param mask the mask of the destination
+			
+			* @param value the (next hop address, next hop device) pair
+			
+			
+			
+			\item \texttt{int queryNextHopMac(uint32\_t dst, std::pair<macAddress,int> *value)}
+				
+				* @brief find the (next hop address, next hop device) pair according to the rule set above
+				
+				* @param dst the destination v
+				
+				* @param value the pointer of (next hop address, next hop device) pair
+				
+				* @return 0 on at least one matching rules, -1 on no matching tules.
+				
+		\end{itemize}
+	\end{itemize}
+	
+	\subsection*{mytime.h}
+	
+	\par Library for microsecond timer.
+	
+	\begin{itemize}
+		\item \texttt{gettime()}
+		
+		* get the current time in microsecond(us)
+		
+		* @return the current time in microsecond(us)
+		
+	\end{itemize}
+	
+	\subsection*{arp.h}
+	
+	\par Library for my ARP-Like Routing algorithm.
+	
+	\begin{itemize}
+		\item \texttt{int ARPCallback(const void* \_\_buffer, const void* \_\_mac\_addr, int len, int index)}
+	
+		The callback function for my ARP-Like routing algorithm. The function is called if the device receive a ARP-Like packet.
+		
+		* @param \_\_buffer the buffer of the ARP-Like Header
+		
+		* @param \_\_mac\_addr the device which send the ARP-Header
+		
+		* @param len the length of the buffer
+		
+		* @param index the index of the device which receive the ARP-Header.
+		
+		* @return 0 on success, 1 on failure.
+		
+		
+		\item \texttt{int getNextHopMac(struct in\_addr dst\_ipaddr, void* nextHopMac, int \&index)}
+		
+		* find the Mac address for the next hop
+		 
+		* @param dst\_ipaddr the ip address of the device which packet will be send.
+		
+		* @param nextHopMac the piece of memory to save the Mac address of the nextHop
+		
+		* @param index      the index of device to retransmit the packet.
+		
+		* @return 0 on success, -1 on failure.
+	\end{itemize}
+	
+	\subsection*{callback.h}
+	
+	\par Library for callback functions.
+	\begin{itemize}
+		\item \texttt{egLinkCallback(const void* \_\_buffer, const void* \_\_mac\_addr, int len, int index))}
+		
+		* Example LinkLayer Callback function.
 		
 		* @param \_\_buffer the message from the packet.
 		
@@ -256,37 +441,104 @@
 		* @param the index of device which receive the packet.
 		
 		* @return 0 on success, 1 on failure.
+		
+		
+		\item \texttt{egLinkCallback(const void* \_\_buffer, const void* \_\_mac\_addr, int len, int index, uint16\_t proto))}
+		
+		* Link Layer Callback function used in 5-layer netstack model
+		
+		* @param \_\_buffer the message from the packet.
+		
+		* @param \_\_mac\_addr the mac address of the source of the packet.
+		
+		* @param len the length of \_\_buffer
+		
+		* @param the index of device which receive the packet.
+		
+		* @return 0 on success, 1 on failure.
+		
+		* @param proto the protocol used in the packet
+		
+		\item \texttt{egIPCallback(const void* \_\_buffer, struct IPHeader header, int len, int index))}
+		
+		* Example IP Layer Callback function.
+		
+		* @param \_\_buffer the message from the packet.
+		
+		* @param header the header of the IP Packet
+		
+		* @param len the length of \_\_buffer
+		
+		* @param the index of device which receive the packet.
+		
+		* @return 0 on success, 1 on failure.
 	\end{itemize}
+	
+	\subsection*{ip.h}
+	
+	\par Library supporting sending / receiving IP packets encapsulated	in an Ethernet II frame .
+	
+	\begin{itemize}
+		\item \texttt{int sendIPPacket(const struct in\_addr src ,const struct in\_addr dest ,int proto , const void * buf , int len)} 
 		
+		* Send an IP packet to specified host .
 		
+		* @param src Source IP address .
 		
-	\section{Implementing Details}
-	
-	\subsection*{name2mac.h}
-	
-	\par The piece of code use \texttt{socket} and \texttt{ioctl} to find the MAC address, instead of directly reading files from \texttt{/etc/ether}. 
-	
-	\par And because of that, the code require root access to run, otherwise it will fail to find the MAC address.
-	
-	\subsection*{device.h}
-	
-	\par This piece of code use structure \texttt{DeviceNodes} to maintain all informations about specific devices, and this may helps to reduce the difficulty of the following labs. And also, each \texttt{DeviceNodes} use two different handlers, one for sending packets, and the other one for receiving packets. The receiver use a filter, so that it only react the packet which the destination address is the same as the mac address of the device. Also, there may have different callback function for different devices, so I choose to save the function for each device.
-	
-	\par \texttt{DeviceManager} maintain a list, which save the pointer of all \texttt{DeviceNodes}. I use a hand-written memory management instead of directly \texttt{vector<DeviceNode>}, because the copy of \texttt{DeviceNode} may cause serious memory leaking. So I copy the pointer, instead of copy the structure itself.
-	
-	\par In addition, \texttt{checkDevice} gives a interface, which can check that whether the specific device exists. And It will fail to add a device, if the manager could not find it.
-	
-	\subsection*{packetio.h}
-	
-	\par Because we have find the MAC address of the device, we can simply splicing all information we have to obtain the raw Ethernet frame. And the frame could be send through the \texttt{send-handler} we have create in \texttt{addDevice}.
-	
-	\par In \text{receiveAllFrame}, Because we have set the filter \texttt{'ether dst xx:xx:xx:xx:xx:xx'}, we can find and only find the frame which is send to the specific device. The \texttt{frame\_count} parameter, like \texttt{pcap\_loop}, is designed for further labs. And because we have set non-blocking for the receiving handler, we must return the number of frame we have received due to delays.
-	
+		* @param dest Destination IP address .
+		
+		* @param proto Value of ‘ protocol ‘ field in IP header .
+		
+		* @param buf pointer to IP payload
+		
+		* @param len Length of IP payload
+		
+		* @return 0 on success , -1 on error .
+		
+		 \item \texttt{void setIPPacketReceiveCallback(IPPacketReceiveCallback callback, int index)}
+		 
+		 * Register a callback function to be called each time an IP
+		 packet was received .
+		 
+		 * @param callback The callback function .
+		 
+		 * @return 0 on success , -1 on error .
+		
+		\item \texttt{int IPHandInPacket(const void* \_\_buffer, int len)}
+		
+		* Handle the IPPacket, retransmit it if the destination of the packet is not the device,
+		and call the callback function if it is the destination
+		
+		* @param \_\_buffer raw IPPacket including information and header
+		
+		* @param len the length of \_\_buffer .
+		
+		* @return 0 on success , -1 on error .
+		
+		\item \texttt{
+			int setRoutingTable(const struct in\_addr dest, const struct in\_addr mask,
+			const void* nextHopMac, const char* device)}
+			
+			* Manully add an item to routing table . Useful when talking
+			with real Linux machines .
+			*
+			* @param dest The destination IP prefix .
+			
+			* @param mask The subnet mask of the destination IP prefix .
+			
+			* @param nextHopMAC MAC address of the next hop .
+			
+			* @param device Name of device to send packets on .
+			
+			* @return 0 on success , -1 on error
+	\end{itemize}
 	\subsection*{main.cpp}
+		
+	\begin{itemize}
+		\item \texttt{msg} test message to send.
+	\end{itemize}
 	
-	\par This part gives a example \texttt{egCallback()} function, which helps me to check whether the packets received are correctly handled.
-	
-	\par The main function firstly print the name, and discription about all devices in the ethernet, and the MAC address of the devices if exists. Then it will insert all devices with MAC address into the device manager. After that it will try to send a raw Ethernet frame from device $0$ to device $0$, where device $0$, the first device we insert, may be \texttt{ens33}(In my conputer) or \texttt{eth0}(Other computers). At last, it will catch $5$ frames to device $0$, and call \texttt{egCallBack()} $5$ times, which print the information about the frame.
+	\par I write 4 piece of testing function, which can helps to test information deliver(in the same time and different time), disconnect judgement, routing rules, and distance table. I write them in \texttt{main.cpp}.
 	
 	\section{Usage}
 	
@@ -305,39 +557,157 @@
 	sudo ./src/lab1
 	\end{lstlisting}
 
+	
 	\section{CheckPoint}
 	
-	\subsection*{CP1}
+	\subsection*{CP3}
 	
-	The following image shows that we try to send a message \texttt{msg} which is defined in \texttt{main.cpp}. After senging out the message, the packet is catched by wireshark, and the frame if sent correctly.
+	The following image shows one of the frame we try to retransmit on device \texttt{ns2}, while the network looks like \texttt{ns1 -- ns2 -- ns3 -- ns4}.
 	
 	\begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.65\linewidth]{../lab-netstack-premium-master/checkpoints/CP1.png}
-	\caption{CP-1: The program send a frame, and it is catched by wireshark}
+	\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/CP3.png}
+	\caption{CP-3: The frame we send on device \texttt{ns2}}
 	\label{fig:CP1}
 	\end{figure}
 	
-	\subsection*{CP2}
+	\par The IP Header locates in bit \texttt{0x0010 $\sim$ 0x0023}. and the meaning is shown in the following table.
 	
-	The following image shows that the frame we send is successfully to \texttt{egCallBack()}
+	\begin{itemize}
+		\item the higher 4 bits of \texttt{0x0010}: the version of IP protocol, $4$ because we use \texttt{IPv4}.
+		
+		\item the lower 4 bits of \texttt{0x0010}: the length of IP Header, $5$ because we use $5 \times 4 = 20$ bytes.
+		
+		\item \texttt{0x0011}: the type of service, we done need to set up this one, so it is filled $0$.
+		
+		\item \texttt{0x0012 $\sim$ 0x0013}: the length of the information, \texttt{0x43} because exactly $81$ bytes follows the header.
+		
+		\item \texttt{0x0014 $\sim$ 0x0015}: the identification of the packet, because the information may be fragmented. We done need to set up this one, so it is filled $0$.
+		
+		\item the higher $3$ bits of \texttt{0x0016}: the identification of the fragment, We done need to set up this one.
+		
+		\item the lower $13$ bits of \texttt{0x0016 $\sim$ 0x0017}: the offset of the fragment, used while the information is fragmented. We done need to set up this one.
+		
+		\item \texttt{0x0018}: the time it will survive in the server, we done need to set up this one, so it is filled \texttt{0x17} like in \texttt{pcap.trace}).
+		
+		\item \texttt{0x0019}: the protocol used, we done need to set up this one, so it is filled \texttt{0x17}.
+		
+		\item \texttt{0x001a $\sim$ 0x001b}: the checksum of packet, calculated after other terms are filled.
+		
+		\item \texttt{0x001c $\sim$ 0x001f}: the IP address of source, $\texttt{10.100.1.1}$ in the network.
+		
+		\item \texttt{0x0020 $\sim$ 0x0023}: the IP address of destination, $\texttt{10.100.3.2}$ in the network.
+		
+	\end{itemize}
+	
+	\subsection*{CP4}
+	
+	\par Set UP the virtual network saved in \texttt{network1.txt}. and then launch 4 bashs, each runs the server using the command
+	
+	\begin{lstlisting}
+	sudo ./src/lab1 2 name
+	\end{lstlisting}
+	
+	\par where name represents the name of the server locate in, like \texttt{ns1}.
+	
+	\par First, launch the $4$ servers at the same time, and server \texttt{ns1} will try to send a message to \texttt{ns4} after about $30$ seconds. \texttt{ns4} receive the message and it print the raw message like follow.(\texttt{ns1} on the top left, \texttt{ns4} on the bottom right, the same arrangement is used in \texttt{CP4-2,CP4-3}).
 	
 	\begin{figure}[htbp]
 		\centering
-		\includegraphics[width=0.65\linewidth]{../lab-netstack-premium-master/checkpoints/CP2-1.png}
-		\caption{CP2-1: The program receive the frame we send}
-		\label{fig:CP2-1}
+		\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/CP4-1.png}
+		\caption{CP4-1: \texttt{ns4} receive the message from \texttt{ns1}}
+		\label{fig:CP4-1}
 	\end{figure}
 	
-	The following image shows that the fifth frame we catch is exactly the fifth frame which is send to the device.
+	\par Then we close \texttt{ns2}, and launch \texttt{ns1} again. It will show that \texttt{ns4} is disconnected because it could not find the route to it. The image I cut is \texttt{CP4-2}.
 	
 	\begin{figure}[htbp]
 		\centering
-		\includegraphics[width=0.65\linewidth]{../lab-netstack-premium-master/checkpoints/CP2-2.png}
-		\caption{CP2-2: The fifth frame we receive}
-		\label{fig:CP2-2}
+		\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/CP4-2.png}
+		\caption{CP4-2: \texttt{ns1} shows that \texttt{ns4} is disconnected.}
+		\label{fig:CP4-2}
 	\end{figure}
 	
-	All these pictures can be found in \texttt{/checkpoints}.
+	\par Finally, we launch \texttt{ns2} again. This time \texttt{ns1} could found \texttt{ns4}, and the message is successfully delivered. The image I cut is \texttt{CP4-4}.
+	
+	\begin{figure}[htbp]
+		\centering
+		\includegraphics[width=0.8\linewidth]{../lab-netstack-premium-master/checkpoints/CP4-3.png}
+		\caption{CP4-3:\texttt{ns4} receive the message from \texttt{ns1}}
+		\label{fig:CP4-3}
+	\end{figure}
+		
+	\subsection*{CP5}
+	
+	\par Set UP the virtual network saved in \texttt{network1.txt}. and then launch 6 bashs, each runs the server using the command
+	
+	\begin{lstlisting}
+	sudo ./src/lab1 4 name
+	\end{lstlisting}
+	
+		\par First, launch the $6$ servers at the same time, and each server will use my ARP-like protocol to find the distance to each other servers. If it could not found the server, the distance if set up to $-1$ represent non-exist. The output will like follow:(\texttt{ns1} on the top left, \texttt{ns6} on the bottom right, the same arrangement is used in \texttt{CP5-2}).
+		
+		\begin{figure}[htbp]
+			\centering
+			\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/CP5-1.png}
+			\caption{CP5-1: the distance for each pair of servers.}
+			\label{fig:CP5-1}
+		\end{figure}
+		
+		\par so the distance table look like follows:
+		
+		\begin{tabular}{|c|c|c|c|c|c|c|}
+			\hline /&1&2&3&4&5&6\\
+			\hline 1&0&1&2&3&2&3\\
+			\hline 2&1&0&1&2&1&2\\
+			\hline 3&2&1&0&1&2&1\\
+			\hline 4&3&2&1&0&3&2\\
+			\hline 5&2&1&2&3&0&1\\
+			\hline 6&3&2&1&2&1&0\\
+			\hline
+		\end{tabular}
+		
+		\par After that, we only launch \texttt{ns1 $\sim$ ns4, ns6} at the same time. then the output will look like follows:
+		
+		\begin{figure}[htbp]
+			\centering
+			\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/CP5-2.png}
+			\caption{CP5-2: the distance for each pair of servers if \texttt{ns5} is not launched.}
+			\label{fig:CP5-1}
+		\end{figure}
+		
+		\par so the distance table look like follows:
+		
+		\begin{tabular}{|c|c|c|c|c|c|c|}
+			\hline /&1&2&3&4&5&6\\
+			\hline 1&0&1&2&3&-1&3\\
+			\hline 2&1&0&1&2&-1&2\\
+			\hline 3&2&1&0&1&-1&1\\
+			\hline 4&3&2&1&0&-1&2\\
+			\hline 5&-1&-1&-1&-1&-1&-1\\
+			\hline 6&3&2&1&2&-1&0\\
+			\hline
+		\end{tabular}
+	
+	\subsection*{CP6}
+	
+	\par Launch one bash, and runs the following command
+	
+	\begin{lstlisting}
+	sudo ./src/lab1 3 ns1
+	\end{lstlisting}
+	
+	\par the server will try to set up 2 routing rules, where the one have mask length 16, the other have 24.
+	
+	\par In the first query, only the first rule fit, so the router return the macaddress of the first rule; however, the second query fit both rule, so the router returns the second rule, because it have a longer fitting length.
+	
+	\par the picture is shown below. 
+	
+	\begin{figure}[htbp]
+		\centering
+		\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/CP6.png}
+		\caption{CP6: Example router reply.}
+		\label{fig:CP5-1}
+	\end{figure}
 		
 \end{document}
