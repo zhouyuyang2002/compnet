@@ -30,7 +30,7 @@
 
 
 \newcommand\E{\mathbb{E}}
-\newcommand{\labid}{2}			% 第几次作业
+\newcommand{\labid}{3}			% 第几次作业
 \newcommand{\name}{Yuyang Zhou} 		% 你的名字
 \newcommand{\id}{2000013061} 	% 你的学号
 
@@ -51,46 +51,27 @@
     \end{center}
 
 	\section{Implemented}
-		\par The features implemented are \texttt{PT1, PT2, PT3}. and this document include the answer of \texttt{WT2 $\sim$ WT4}, \texttt{CP3 $\sim$ CP6}
+		\par The features implemented are \texttt{PT1, PT2, PT3, PT4}. and this document include the answer of \texttt{WT5}, \texttt{CP7 $\sim$ CP8}.
+		
+		\par Due to some linking issues, I failed to hijack my socket into TA's test solution. So I could't give the answer for \texttt{CP9, CP10}.
 	
-	\section{WT2}
+	\section{WT5}
 	
-		\par (1) The following in ARP Reply is the same as
-		the Sender MAC address in ARP Request:
-		
-		\begin{itemize}
-			\item the Receiver MAC address in ARP Reply.
-			\item the destination MAC address in the Ethernet Header in the last Hop.
-		\end{itemize}
-		
-		\par (2) 1674 non-fragment packets in total.
-		
-		\par (3) The length of \texttt{IPv6} header is 40 bytes, while length of \texttt{IPv4} header is 20 bytes.
-	\section{WT3 \& WT4}
+		\subsection*{(1), (2)}
+			There are 2 sessions.
+			
+			\begin{itemize}
+				\item Session 1, between \texttt{10.0.0.74:43120} and \texttt{112.27.207.221:80}, 12 segments in total.
+				\item Session 2, between \texttt{10.0.0.74:43122} and \texttt{112.27.207.221:80}, 1652 segments in total.
+			\end{itemize}
+		\subsection*{(3)}
+			 The window size of Packet 86 is $43520$.
+			 
+			 The windows size depends on the number of remaining spaces in the buffer, which save the received, but not readed messages. It is cauculated using the size of receiving buffer, minus the length of received, but not readed messages.
 	
-		\par The answer of these two problems are shown below, because the answer are highly related to each other. I use an ARP-Like protocol to implement routing, and find the MAC address of the next hop. The detail is shown below.
-		
-		\begin{itemize}
-			\item when I use ARP in server $A$, trying to find the information about server $D$, I need to broadcast ARP-request to all devices which directly connected to server $A$. and when server $B$ receive an ARP-request from MAC address $C$, server $B$ knows that: 
-			
-			* If I want to send any message to server $A$, I can send along the route that server send an ARP-request to be backwards, and the route is surely exists if all servers works well.
-				
-			\item So server $B$ can directly set the following rule: If I want to send a message to $A$, the next hop address is $C$. The correctness is shown above. The same holds for ARP-reply request.
-			
-			\item If server $B$ contains the next hop to the destination, or server $B$ itself is just the destination, it can simply send an ARP-reply back to server $A$. Also the send-back procedure doesn't require any ARP-request. This is because that on the route server $A$ send the ARP-request to it, the next hop to server $A$ has already been set-up accroding to the rule above, so every next-hop-query is success along the route.
-			
-			\item Otherwise, server $B$ will try to broadcast the ARP-request to all its neighbors. but it may cause infinity ARP requests if we doesn't handle it well. So I design the following broadcast rule:
-			
-			* If server $A$ have not send any message to me, or I have not broadcast any information about server $D$, I will broadcast the message; otherwise, I will not try to broadcast it, and there is no reply.
-			
-			\item The rule above works well if there are no host broke down, and no new servers add in. and it will not cause request loop. Also it could give a really low delay(lower than 100ms in testing) even we try to send a message to a new server.
-			
-			\item One of ways to improve it is to restart server in some specific situations, which could help to solve the broke down server, or the new added server. But it may be a bit complex, so I doesn't implement it. 
-		\end{itemize}
-		
-		Using the ARP-like protocol shown above, I can always find the MAC address for the next-hop, and the MAC address of the destination, if the network is connected and static. and these imformations can be used in \texttt{sendFrames}.
+	\section{Lower-level Code Arrangement}
 	
-	\section{Code Arrangement}
+	\par This part is copy from the \texttt{readme.pdf} from Lab2.
 	
 	\subsection*{macro.h}
 		\par define the macros used in the following programs.
@@ -532,13 +513,52 @@
 			
 			* @return 0 on success , -1 on error
 	\end{itemize}
-	\subsection*{main.cpp}
-		
-	\begin{itemize}
-		\item \texttt{msg} test message to send.
-	\end{itemize}
 	
-	\par I write 4 piece of testing function, which can helps to test information deliver(in the same time and different time), disconnect judgement, routing rules, and distance table. I write them in \texttt{main.cpp}.
+	\section{Higher-level code arrangement}
+	
+		\par I'll just give a brief for each file, because this piece of code is even longer the the former two labs.
+		
+		\begin{itemize}
+			\item \texttt{packetio.h} I change the packet receiveing rule in it. In Lab2 I'll accept the routing packets send by me, thus gives duplicated routing packets. and In this time, I'll ignore them. This helps to reduce the number of packets transmitted, and prevent the dead-lock in the network system.
+			
+			\item \texttt{IOBuffer.h} This gives a quick implementation of buffer area for each socket to use. Each socket will have a waiting buffer for messages preparing to send; a send buffer save the message which have been sent but not receive acknowledgement; and a receive buffer save the message received, but not read by user.
+			
+			I use a ring-like queue to save the message, and the size of the queue grows up is the message length gets longer. It can support up to $2^{21}-1$ byte of messages, and gives the support of retransmission.
+			
+			\item \texttt{moniter.h} This is the moniter, which gives the backend monitering of the whole TCP/IP stack, and the way to start the backend moniter. The backend will be lauched if any interface in \texttt{getaddrinfo} is called, and after being launched, It will try to receive possible packets from each device in \texttt{5ms} intervals, and retransmit un-acknowledged messages in \texttt{50ms} intervals. Also, when the moniter is launched, it will give the support of \texttt{Ctrl+C} for a force quit.
+			
+			\item \texttt{portmanager.h} This gives the map between (ip address, port) pair and the socket id. Also when using \texttt{connect()}, it can gives an empty port index assigned to the socket, or report that it doesn't exist.
+			
+			\item \texttt{retrans.h} This gives \texttt{retransQ}, which provide retransmit management. It saved the length of messages sent in every \texttt{50ms} intervals. If the message doesn't get the acknowledgement after \texttt{50ms}, it will report the moniter and retransmit it. And if retransmit fails for \texttt{62}times ($3100$ms, respectively), it will be dropped, and warn the user.
+			
+			\item \texttt{portal.h} This implements the socket using \texttt{socketNode}. And we also implement \texttt{socketManager}, which manage all the socket we have already setup, and gives the mapping between socket index and socket node. The socket index is shifted by a constant(\texttt{0x12345 = 74565}), avoid collusion with other frequent-used fildes.
+			
+			In the \texttt{soceketNode}, we save the state of the socket(\texttt{binded, connected, hang, state}); the source address and the dest address of the connection(\texttt{addr, dst\_addr}); the packages for the connections which is waiting for accept(\texttt{trap\_ip\_frame,trap\_tcp\_frame,trap\_count,trap\_bound}); several buffers for waiting, sending, receiving buffers(\texttt{fwait, fsend, freceive}); the informations about sequence numbers and acknowledgements(\texttt{syn, ack}); and the informations retransmission queue(\texttt{retransQ});
+			
+			For \texttt{read, write, close} operations, \texttt{rfc} gives the full implementing details about how to handle it, so we omit the details. For \texttt{socket}, actually it doesn't play an important role init, so we can just save the values, and ignore it in further implemention; For \texttt{bind, listen, connect}, we can found the implemention in \texttt{OPEN}, it discussed passive and active connections, which can be regarded as \texttt{listen} and \texttt{connect}. so we can also omit this.
+			
+			For \texttt{accept}, we can found it in the documentation, but we found that when dealing with \texttt{SEGMENT ARRIVES} in \texttt{LISTEN} state, after the segment is accepted, it actually return a segment which means that the device accept the connection. So we can move the part from \texttt{packetHandle()} to \texttt{accept()}, and only save the informations in \texttt{trap\_ip\_frame,trap\_tcp\_frame,trap\_count} when it arrives.
+				
+			For \texttt{SEGMENT ARRIVE}, we can found it in the documentation. Except \texttt{urgent bit, secutiry check},we can ignore it because it's a simplified version, but all others should be work. So just copy it is ok. And we should also remove the message in fsend if we receive an acknowledgement.
+			
+			At last, for \texttt{retransmit()}, we use a ring-like queue \texttt{retransQ}. we remove the message that waiting for too-long, ignore the message if it ha been acknowledged, but not pushed into the queue yet.
+			
+			\item \texttt{socket.h} This gives all the required interfaces(but I failed to hijack them). Except \texttt{getaddrinfo, freeaddrinfo}, every other interface will interact with \texttt{socket\_manager}.
+			
+			\item \texttt{callback.h} I modified the IP Layer callback functions. If the packet is send to the server, then it will be handle to the \texttt{socketNode}. Otherwise the packet is not transmited to the device, and we'll try to find the path to the destinations, then retransmit it.
+			
+			\item \texttt{tcp.h} This provide the service for sending TCP packet to a specific desinations. It will find the pseudo TCP header, calculate the checksum in TCP protocol, filling the blanks in the header, and hand it into IP layer.
+			
+			\item \texttt{lab2.cpp} This is the old \texttt{main.cpp} in Lab2, gives 4 different test function for IP layer.
+			
+			\item \texttt{router.cpp} This is the router in Lab3, which can gives message transfer, but could not build any TCP connection with it.
+			
+			\item \texttt{server.cpp} This is the server in Lab3, which can gives message transfer, and can also build TCP connection with another server.In order to make the output results clearer and easier to understand, I implement a simple terminal, which provide interaction with users and the backend. The usage can be found using \texttt{'help'}.
+			
+			\item \texttt{multi-threading} We have 2 different threading running at the same time, after the backend is lauched. The one is the frontend, which gives the interaction with the user. The other one is the backend, which moniter the whole stack, provide routing, message handling, message sending and so on. We use semaphores to prevent data preemption: only one thread is allowed to change the data in socket at the same time.
+						
+		\end{itemize}
+		
 	
 	\section{Usage}
 	
@@ -551,163 +571,90 @@
 		make
 	\end{lstlisting}
 	
-	Then executable file is saved in \texttt{/build/src/lab1}, and you can use the following command to run it.
+	Then executable file is saved in \texttt{/build/src/router} and \texttt{/build/src/server}, and you can use the following command to run it.
 	
 	\begin{lstlisting}
-	sudo ./src/lab1
+	sudo ./src/router
+	sudo ./src/server
 	\end{lstlisting}
 
 	
 	\section{CheckPoint}
 	
-	\subsection*{CP3}
+	\subsection*{CP7}
 	
-	The following image shows one of the frame we try to retransmit on device \texttt{ns2}, while the network looks like \texttt{ns1 -- ns2 -- ns3 -- ns4}.
+	The following image shows the $14$th frame we transmit in \texttt{CP8-3}. the packet trace is provided in \texttt{checkpoints}
 	
 	\begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/CP3.png}
-	\caption{CP-3: The frame we send on device \texttt{ns2}}
-	\label{fig:CP1}
+	\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/CP7.png}
+	\caption{CP-7: The frame we send on device \texttt{ns3}}
+	\label{fig:CP7}
 	\end{figure}
 	
-	\par The IP Header locates in bit \texttt{0x0010 $\sim$ 0x0023}. and the meaning is shown in the following table.
+	\par The TCP Header locates in bit \texttt{0x0022 $\sim$ 0x39}. and the meaning is shown in the following table.
 	
 	\begin{itemize}
-		\item the higher 4 bits of \texttt{0x0010}: the version of IP protocol, $4$ because we use \texttt{IPv4}.
+		\item \texttt{0x0022 $\sim$ 0x0023}: the source port of the connection.
 		
-		\item the lower 4 bits of \texttt{0x0010}: the length of IP Header, $5$ because we use $5 \times 4 = 20$ bytes.
+		\item \texttt{0x0024 $\sim$ 0x0025}: the destination port of the connection.
 		
-		\item \texttt{0x0011}: the type of service, we done need to set up this one, so it is filled $0$.
 		
-		\item \texttt{0x0012 $\sim$ 0x0013}: the length of the information, \texttt{0x43} because exactly $81$ bytes follows the header.
+		\item \texttt{0x0026 $\sim$ 0x0029}: sequence number of the segment
 		
-		\item \texttt{0x0014 $\sim$ 0x0015}: the identification of the packet, because the information may be fragmented. We done need to set up this one, so it is filled $0$.
 		
-		\item the higher $3$ bits of \texttt{0x0016}: the identification of the fragment, We done need to set up this one.
+		\item \texttt{0x002a $\sim$ 0x002d}: the acknowlegde number that the source device want to ack. used if \texttt{ACK} bit is on.
 		
-		\item the lower $13$ bits of \texttt{0x0016 $\sim$ 0x0017}: the offset of the fragment, used while the information is fragmented. We done need to set up this one.
+		\item higher 4 \texttt{0x002e}: the number of long(32 bit) contained in TCP header, $6$ in this packet
 		
-		\item \texttt{0x0018}: the time it will survive in the server, we done need to set up this one, so it is filled \texttt{0x17} like in \texttt{pcap.trace}).
+		\item lower 6 bits \texttt{0x002f}: the control bits, which are \texttt{URG, ACK, PSH, RST, SYN, FIN} from high to low respectively.
 		
-		\item \texttt{0x0019}: the protocol used, we done need to set up this one, so it is filled \texttt{0x17}.
+		\item  \texttt{0x0030 $\sim$ 0x31}: the window size of the prefered receiving packet size if the receiver send message to sender.
 		
-		\item \texttt{0x001a $\sim$ 0x001b}: the checksum of packet, calculated after other terms are filled.
+		\item  \texttt{0x0032 $\sim$ 0x0033}: the checksum of the header, including length and ip address.
 		
-		\item \texttt{0x001c $\sim$ 0x001f}: the IP address of source, $\texttt{10.100.1.1}$ in the network.
+		\item  \texttt{0x0034 $\sim$ 0x0035}: the urgent pointer, point to the data which is required to process as quick as possible. Used only \texttt{URG} is set.
 		
-		\item \texttt{0x0020 $\sim$ 0x0023}: the IP address of destination, $\texttt{10.100.3.2}$ in the network.
+		\item  \texttt{0x0036 $\sim$ 0x0039}: the options in TCP header.
+		
 		
 	\end{itemize}
 	
-	\subsection*{CP4}
+	\subsection*{CP8}
 	
-	\par Set UP the virtual network saved in \texttt{network1.txt}. and then launch 4 bashs, each runs the server using the command
+	\par Set UP the virtual network saved in \texttt{network1.txt}. and then launch 2 bashs, which located in \texttt{ns1,ns2}. In each bash, launch the server and you can interact with the server.
 	
-	\begin{lstlisting}
-	sudo ./src/lab1 2 name
-	\end{lstlisting}
+	\par In the below image is my testing trace with server. First I build the connection between two servers, which have the port address \texttt{10.100.1.1:233} and \texttt{10.100.1.2:0}. The I send messages in both direction, and it shows that it can support a Half Duplex communications between servers. 
 	
-	\par where name represents the name of the server locate in, like \texttt{ns1}.
-	
-	\par First, launch the $4$ servers at the same time, and server \texttt{ns1} will try to send a message to \texttt{ns4} after about $30$ seconds. \texttt{ns4} receive the message and it print the raw message like follow.(\texttt{ns1} on the top left, \texttt{ns4} on the bottom right, the same arrangement is used in \texttt{CP4-2,CP4-3}).
+	\par The packet captured in \texttt{veth1-2} at \texttt{ns1} while we testing the communications is provided in \texttt{checkpoints/test1-connection.txt}, which can be load using wireshark. The screen shot of the interact trace can also be found in \texttt{checkpoints}.
 	
 	\begin{figure}[htbp]
 		\centering
-		\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/CP4-1.png}
-		\caption{CP4-1: \texttt{ns4} receive the message from \texttt{ns1}}
-		\label{fig:CP4-1}
+		\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/test1-connection.png}
+		\caption{CP8-1: the connection is currectly set up.}
+		\label{fig:CP8-1}
 	\end{figure}
 	
-	\par Then we close \texttt{ns2}, and launch \texttt{ns1} again. It will show that \texttt{ns4} is disconnected because it could not find the route to it. The image I cut is \texttt{CP4-2}.
+	\par If we set packet drop using \texttt{tc qdisc add dev veth2-1 root netem loss 50\%} in \texttt{ns2} after the connection is set up, Then the server can correctly detect the packet loss if the message is not acknowledged. After the packet loss is set up, I send 7 different messages from \texttt{ns1} to \texttt{ns2}; one of them have exactly \texttt{1} retransmission, and the other one have \texttt{3} retransmission. The screen shot of the interact is shown below and the packet captured in \texttt{veth2-1} is provided in \texttt{checkpoints/test2-retransmission.txt}
 	
 	\begin{figure}[htbp]
 		\centering
-		\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/CP4-2.png}
-		\caption{CP4-2: \texttt{ns1} shows that \texttt{ns4} is disconnected.}
-		\label{fig:CP4-2}
+		\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/test2-retransmission.png}
+		\caption{CP8-2: retransmit the message if ACK is blocked.}
+		\label{fig:CP8-2}
 	\end{figure}
 	
-	\par Finally, we launch \texttt{ns2} again. This time \texttt{ns1} could found \texttt{ns4}, and the message is successfully delivered. The image I cut is \texttt{CP4-4}.
+	\par Also I test is the message is blocked. I run \texttt{server} in \texttt{ns1,ns3}, and \texttt{router} in \texttt{ns2}. After connection is set up, I use \texttt{tc qdisc add dev veth2-1 root netem loss 50\%} to set packet drop, and send $6$ different message to \texttt{ns1}. Almost every one have retransmission happened, and they are received by \texttt{ns1} in correct order. The screen shot of the interact is shown below and the packet captured in \texttt{veth3-2} is provided in \texttt{checkpoints/test3-retransmission.txt}
 	
 	\begin{figure}[htbp]
 		\centering
-		\includegraphics[width=0.8\linewidth]{../lab-netstack-premium-master/checkpoints/CP4-3.png}
-		\caption{CP4-3:\texttt{ns4} receive the message from \texttt{ns1}}
-		\label{fig:CP4-3}
+		\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/test3-retransmission.png}
+		\caption{CP8-3: retransmit the message if message is blocked.}
+		\label{fig:CP8-3}
 	\end{figure}
-		
-	\subsection*{CP5}
 	
-	\par Set UP the virtual network saved in \texttt{network1.txt}. and then launch 6 bashs, each runs the server using the command
 	
-	\begin{lstlisting}
-	sudo ./src/lab1 4 name
-	\end{lstlisting}
 	
-		\par First, launch the $6$ servers at the same time, and each server will use my ARP-like protocol to find the distance to each other servers. If it could not found the server, the distance if set up to $-1$ represent non-exist. The output will like follow:(\texttt{ns1} on the top left, \texttt{ns6} on the bottom right, the same arrangement is used in \texttt{CP5-2}).
-		
-		\begin{figure}[htbp]
-			\centering
-			\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/CP5-1.png}
-			\caption{CP5-1: the distance for each pair of servers.}
-			\label{fig:CP5-1}
-		\end{figure}
-		
-		\par so the distance table look like follows:
-		
-		\begin{tabular}{|c|c|c|c|c|c|c|}
-			\hline /&1&2&3&4&5&6\\
-			\hline 1&0&1&2&3&2&3\\
-			\hline 2&1&0&1&2&1&2\\
-			\hline 3&2&1&0&1&2&1\\
-			\hline 4&3&2&1&0&3&2\\
-			\hline 5&2&1&2&3&0&1\\
-			\hline 6&3&2&1&2&1&0\\
-			\hline
-		\end{tabular}
-		
-		\par After that, we only launch \texttt{ns1 $\sim$ ns4, ns6} at the same time. then the output will look like follows:
-		
-		\begin{figure}[htbp]
-			\centering
-			\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/CP5-2.png}
-			\caption{CP5-2: the distance for each pair of servers if \texttt{ns5} is not launched.}
-			\label{fig:CP5-1}
-		\end{figure}
-		
-		\par so the distance table look like follows:
-		
-		\begin{tabular}{|c|c|c|c|c|c|c|}
-			\hline /&1&2&3&4&5&6\\
-			\hline 1&0&1&2&3&-1&3\\
-			\hline 2&1&0&1&2&-1&2\\
-			\hline 3&2&1&0&1&-1&1\\
-			\hline 4&3&2&1&0&-1&2\\
-			\hline 5&-1&-1&-1&-1&-1&-1\\
-			\hline 6&3&2&1&2&-1&0\\
-			\hline
-		\end{tabular}
 	
-	\subsection*{CP6}
-	
-	\par Launch one bash, and runs the following command
-	
-	\begin{lstlisting}
-	sudo ./src/lab1 3 ns1
-	\end{lstlisting}
-	
-	\par the server will try to set up 2 routing rules, where the one have mask length 16, the other have 24.
-	
-	\par In the first query, only the first rule fit, so the router return the macaddress of the first rule; however, the second query fit both rule, so the router returns the second rule, because it have a longer fitting length.
-	
-	\par the picture is shown below. 
-	
-	\begin{figure}[htbp]
-		\centering
-		\includegraphics[width=0.9\linewidth]{../lab-netstack-premium-master/checkpoints/CP6.png}
-		\caption{CP6: Example router reply.}
-		\label{fig:CP5-1}
-	\end{figure}
 		
 \end{document}

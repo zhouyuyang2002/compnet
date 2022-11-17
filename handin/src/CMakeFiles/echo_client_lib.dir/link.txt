@@ -1,0 +1,2 @@
+/usr/bin/ar qc libecho_client_lib.a  CMakeFiles/echo_client_lib.dir/echo_client.cpp.o
+/usr/bin/ranlib libecho_client_lib.a

@@ -35,10 +35,9 @@ int sendIPPacket(const struct in_addr src ,const struct in_addr dest ,
     header.version = 4;
     header.IHL = 5;
     header.TofService = 0x00;//magic
-    header.length = htons(len);
+    header.length = htons(len + header.IHL * 4);
     header.identification = htons(identification++);
     header.flags = NO_FRAG | LAST_FRAG;
-    header.Fragoffset = 0;
     header.time2live = 0x40;
     header.protocol = (unsigned char)proto;
     header.src_addr.s_addr = htonl(src.s_addr);
@@ -82,12 +81,14 @@ int IPHandInPacket(const void* __buffer, int len){
     header.identification = ntohs(header.identification);
     header.length = htons(header.length);
 
-    int headerlen = header.IHL * 4;
-    int packetlen = len - headerlen;
-    if (packetlen != header.length)
-        errhandle("Unmatched datagram length!");
+    if (len != header.length)
+        errhandle("Unmatched datagram length!\n");
     char* buffer = (char*)__buffer;
 
+    int headerlen = 4 * header.IHL;
+    int packetlen = len - headerlen;
+    if (packetlen < 0)
+        errhandle("packet length smaller than 0\n");
     int index = -1;
     for (int i = 0; i < d_manager.count(); i++)
         if (header.dst_addr.s_addr == d_manager[i] -> ip_addr.s_addr)

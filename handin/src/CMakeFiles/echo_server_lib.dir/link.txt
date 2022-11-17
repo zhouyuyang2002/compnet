@@ -1,0 +1,2 @@
+/usr/bin/ar qc libecho_server_lib.a  CMakeFiles/echo_server_lib.dir/echo_server.cpp.o
+/usr/bin/ranlib libecho_server_lib.a

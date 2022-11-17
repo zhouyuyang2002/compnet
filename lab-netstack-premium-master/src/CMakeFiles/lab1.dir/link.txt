@@ -1,0 +1,1 @@
+/usr/bin/c++     CMakeFiles/lab1.dir/main.cpp.o  -o lab1 -Wl,-rpath,/usr/local/lib libmain.a /usr/local/lib/libpcap.so 

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libunp.a  CMakeFiles/unp.dir/unp.c.o
+/usr/bin/ranlib libunp.a

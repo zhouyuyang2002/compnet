@@ -34,7 +34,12 @@ struct RoutingTable{
         node_released = node_count = 1;
     }
     ~RoutingTable(){
-        delete[] mem;
+        //fprintf(stderr, "routing.h, rt\n");
+        if (mem != NULL){
+            delete[] mem;
+            mem = NULL;
+        }
+        //fprintf(stderr, "routing.h, rt\n");
     }
 
     int newNode(){

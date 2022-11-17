@@ -1,0 +1,2 @@
+/usr/bin/ar qc librouter_lib.a  CMakeFiles/router_lib.dir/router.cpp.o
+/usr/bin/ranlib librouter_lib.a

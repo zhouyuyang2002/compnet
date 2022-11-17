@@ -38,7 +38,13 @@ struct IPTable{
         node_released = node_count = 1;
     }
     ~IPTable(){
-        delete[] mem;
+
+        //fprintf(stderr, "iptable.h, iptab\n");
+        if (mem != NULL){
+            delete[] mem;
+            mem = NULL;
+        }
+        //fprintf(stderr, "iptable.h, iptab\n");
     }
 
     int newNode(){

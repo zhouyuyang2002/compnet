@@ -18,11 +18,15 @@ const uint32_t COMPILEBUF_SIZE = 0x100;
 #define IPPROTOCOL 0x0800
 #define ARPPROTOCOL 0x0806
 #define DTRPPROTOCOL 0x0806
+#define TCPPROTOCOL 0x06
 
-#define NO_FRAG 0x2
-#define MAY_FRAG 0x0
-#define MORE_FRAG 0x1
-#define LAST_FRAG 0x0
+#define NO_FRAG 0x20
+#define MAY_FRAG 0x00
+#define MORE_FRAG 0x10
+#define LAST_FRAG 0x00
+
+const size_t PACKETLEN = 0x800;    
+const size_t WNDVAL = 0x8000;     
 
 
 const struct macAddress __broadcast_addr = {{0xff,0xff,0xff,0xff,0xff,0xff}};

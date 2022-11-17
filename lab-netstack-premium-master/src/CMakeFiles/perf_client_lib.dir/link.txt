@@ -1,0 +1,2 @@
+/usr/bin/ar qc libperf_client_lib.a  CMakeFiles/perf_client_lib.dir/perf_client.cpp.o
+/usr/bin/ranlib libperf_client_lib.a

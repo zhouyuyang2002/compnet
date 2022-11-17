@@ -41,7 +41,7 @@ struct ARPHeader{
 };
 
 struct IPHeader{
-    #ifndef LITTIE_ENDIAN
+    #ifdef LITTLE_ENDIAN
         unsigned char IHL : 4;
         unsigned char version : 4;
     #else
@@ -51,15 +51,19 @@ struct IPHeader{
     unsigned char TofService;
     unsigned short length; 
     unsigned short identification;
-    unsigned short flags: 3;
-    unsigned short Fragoffset : 13;
+    #ifdef LITTLE_ENDIAN
+        unsigned short Fragoffset : 13;
+        unsigned short flags: 3;
+    #else
+        unsigned short flags: 3;
+        unsigned short Fragoffset : 13;
+    #endif
     unsigned char time2live;
     unsigned char protocol;
     unsigned short checksum;
     struct in_addr src_addr;
     struct in_addr dst_addr;
-    unsigned int options: 24;
-    unsigned int padding: 8;
+    unsigned int options;
 
     void CalcCheckSum(){
         unsigned short* head = &identification;
@@ -67,7 +71,7 @@ struct IPHeader{
         int rows = IHL;
         unsigned short temp = checksum = 0;
         for (int i = 0; i < 2 * rows; i++){
-            unsigned short val = *(head + 2 * i);
+            unsigned short val = *(head + i);
             if (val > (unsigned short)0xffff - temp)
                 temp = temp + 1;
             temp = temp + val;
@@ -81,7 +85,7 @@ struct IPHeader{
         int rows = IHL;
         unsigned short temp = 0;
         for (int i = 0; i < 2 * rows; i++){
-            unsigned short val = *(head + 2 * i);
+            unsigned short val = *(head + i);
             if (val > (unsigned short)0xffff - temp)
                 temp = temp + 1;
             temp = temp + val;
@@ -92,6 +96,76 @@ struct IPHeader{
     }
 //65535-(65535-x+65535) = x-65535
 //65535-x+65535-(x-65535)
+};
+
+struct TCPPseudoHeader{
+    struct in_addr src_addr;
+    struct in_addr dst_addr;
+    uint8_t zero;
+    uint8_t protocol;
+    uint16_t length;
+};
+struct TCPHeader{
+    uint16_t src_port;
+    uint16_t dst_port;
+    uint32_t syn_num;
+    uint32_t ack_num;
+    #ifdef LITTLE_ENDIAN
+        unsigned char __useless: 4;
+        unsigned char offset: 4;
+    #else
+        unsigned char offset: 4;
+        unsigned short __useless: 4;
+    #endif
+    unsigned char control;
+    uint16_t window;
+    uint16_t checksum;
+    uint16_t urgent_ptr;
+    uint32_t options;
+
+    void CalcCheckSum(struct TCPPseudoHeader pseudo_header){
+        unsigned short* head = &src_port;
+        int rows = offset;
+        unsigned short temp = checksum = 0;
+        for (int i = 0; i < 2 * rows; i++){
+            unsigned short val = *(head + i);
+            if (val > (unsigned short)0xffff - temp)
+                temp = temp + 1;
+            temp = temp + val;
+        }
+        head = (unsigned short*)&pseudo_header;
+        for (int i = 0; i < 6; i++){
+            unsigned short val = *(head + i);
+            if (val > (unsigned short)0xffff - temp)
+                temp = temp + 1;
+            temp = temp + val;
+        }
+        checksum = ~temp;
+        //printf("checksum = %04x\n", temp);
+    }
+
+    int CheckValid(struct TCPPseudoHeader pseudo_header){
+        unsigned short* head = &src_port;
+        int rows = offset;
+        unsigned short temp = 0;
+        for (int i = 0; i < 2 * rows; i++){
+            unsigned short val = *(head + i);
+            if (val > (unsigned short)0xffff - temp)
+                temp = temp + 1;
+            temp = temp + val;
+        }
+        head = (unsigned short*)&pseudo_header;
+        for (int i = 0; i < 6; i++){
+            unsigned short val = *(head + i);
+            if (val > (unsigned short)0xffff - temp)
+                temp = temp + 1;
+            temp = temp + val;
+        }
+        //printf("checksum = %04x\n", temp);
+        if (temp != 0 && (temp != (unsigned short)0xffff))
+            return -1;
+        return 0;
+    }
 };
 
 #endif

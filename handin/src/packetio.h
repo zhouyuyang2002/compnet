@@ -53,7 +53,17 @@ int ethtype, const void *destmac, int id){
 
     if (pcap_sendpacket(device->send_handler, framebuf, len + sizethhdr) != 0){
         delete[] framebuf;
+        fprintf(stderr, "error %s\n", pcap_geterr(device->send_handler));
+        fprintf(stderr, "buffer:\n");
+        for (int i = 0; i < len + sizethhdr; i++){
+
+            fprintf(stderr, "%02x ", (unsigned char)framebuf[i]);
+            if (i % 16 == 15)
+                puts("");
+        }
+        puts("");
         errhandle("failed to send the ethernet packet\n");
+
     }
     delete[] framebuf;
     return 0;
@@ -102,6 +112,30 @@ int LinkHandInPacket(struct pcap_pkthdr* pkt_header, const u_char* framebuf, int
         }
     else{
         struct ethhdr framehdr = *((struct ethhdr*)framebuf);
+        bool ignore = false;
+        for (int i = 0; i < d_manager.count(); i++)
+            {
+                bool same = true;
+                for (int j = 0; j < 6; j++)
+                    if (d_manager[i] -> mac_addr[j] != framehdr.h_source[j])
+                        same = false;
+                if (same == true)
+                    ignore = true;
+            }
+        if (ignore){
+            //puts("ignored");
+            return 0;
+        }
+        /*printf("Capture Package size: %d\n",pkt_header->caplen);
+        printf("Capture Package on Device: %s\n", d_manager[index] ->device_names);
+        printf("Device Mac Address: ");
+        printmac(d_manager[index] -> mac_addr);
+        puts("");
+        for (int i = 0; i < pkt_header->caplen; i++){
+            printf("%02x ", framebuf[i]);
+            if ((i + 1) % BYTE_IN_ROW == 0) puts("");
+        }
+        puts("");*/
         const uint8_t* src_mac = framehdr.h_source;
         const u_char* buffer = framebuf + sizethhdr;
         uint16_t protocol = ntohs(framehdr.h_proto);

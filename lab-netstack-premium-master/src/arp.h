@@ -136,12 +136,13 @@ void sigalrmHandler(int signal){
 */
 int getNextHopMac(struct in_addr dst_ipaddr, void* nextHopMac, int &index){
     uint32_t dst = dst_ipaddr.s_addr;
-    for (int i = 0; i < d_manager.count(); i++)
+    for (int i = 0; i < d_manager.count(); i++){
         if (d_manager[i] -> ip_addr.s_addr == dst){
             memcpy(nextHopMac, d_manager[i] -> mac_addr, sizeof(macAddress));
             index = i;
             return 0;
         }
+    }
     std::pair<macAddress, int> value;
     if (routing.queryNextHopMac(dst, &value) == 0){
         *((struct macAddress*)nextHopMac) = value.first;
@@ -169,10 +170,10 @@ int getNextHopMac(struct in_addr dst_ipaddr, void* nextHopMac, int &index){
         usleep(2500 << i);                   // sleep for (2500 << i) us;
         struct itimerval tic;
         tic.it_interval = (struct timeval){1000, 0};
-        tic.it_value = (struct timeval){0, 25000};
+        tic.it_value = (struct timeval){0, 50000};
         pause_tag = false;
         setitimer(ITIMER_VIRTUAL, &tic, NULL);
-        for (pause_tag = false; !pause_tag; ){// spin for 25000 us
+        for (pause_tag = false; !pause_tag; ){// spin for 50000 us
             for (int i = 0; i < d_manager.count(); i++)
                 receiveAllFrame(i, 5);
             std::pair<macAddress, int> value;

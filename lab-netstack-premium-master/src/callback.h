@@ -10,6 +10,8 @@
 #include "device.h"
 #include "packetio.h"
 #include "name2addr.h"
+#include "portmanager.h"
+#include "portal.h"
 #include "mytime.h"
 
 
@@ -89,6 +91,59 @@ int egIPCallback(const void* __buffer, const struct IPHeader header, int len, in
     puts("");
     puts("");
     return 0;
+}
+
+int IPCallback(const void* __buffer, const struct IPHeader header, int len, int index){
+    char* buffer = (char*) __buffer;
+    if (header.protocol == TCPPROTOCOL){
+        struct TCPPseudoHeader Pseudo_header;
+        if (len < sizeof(struct TCPHeader))
+            errhandle("Invalid packet header");
+        Pseudo_header.src_addr.s_addr = htonl(header.src_addr.s_addr);
+        Pseudo_header.dst_addr.s_addr = htonl(header.dst_addr.s_addr);
+        Pseudo_header.zero = 0;
+        Pseudo_header.protocol = TCPPROTOCOL;
+        Pseudo_header.length = htons(len);
+        struct TCPHeader TCP_header = *((struct TCPHeader*) buffer);
+        /*for (int i = 0; i < 24 ; i++)
+            printf("%02x ", ((unsigned char*)&TCP_header)[i]); puts("");
+        for (int i = 0; i < 12 ; i++)
+            printf("%02x ", ((unsigned char*)&Pseudo_header)[i]); puts("");*/
+        if (TCP_header.CheckValid(Pseudo_header) == -1)
+            errhandle("Invalid packet checksum");
+        struct sockaddr_in sock;
+        sock.sin_addr = header.dst_addr;
+        sock.sin_port = ntohs(TCP_header.dst_port);
+        sock.sin_family = AF_INET;
+        int port_index = port_manager[sock];
+        if (port_index == -1)
+            errhandle("Invalid socket address");
+        TCP_header.syn_num = htonl(TCP_header.syn_num);
+        TCP_header.ack_num = htonl(TCP_header.ack_num);
+        TCP_header.src_port = htons(TCP_header.src_port);
+        TCP_header.dst_port = htons(TCP_header.dst_port);
+        TCP_header.window = htons(TCP_header.window);
+        return socket_manager[port_index]->packetHandle(header, TCP_header, buffer + sizeof(struct TCPHeader), len - sizeof(struct TCPHeader));
+    }
+    else{
+        printf("unknown packet type(not a TCP Packet)");
+        printf("proto type: %04x\n", header.protocol);
+        printf("Source IP address:");  printip(header.src_addr);
+        puts("");
+
+        printf("Destination IP address:"); printip(header.dst_addr);
+        puts("");
+
+        printf("Packet identification: %u\n", header.identification);
+        for (int i = 0; i < len; i++){
+            printf("%02x ",(unsigned char)(buffer[i]));
+            if ((i + 1) % BYTE_IN_ROW == 0)
+                puts("");
+        }
+        puts("");
+        puts("");
+        return 0;
+    }
 }
 
 #endif

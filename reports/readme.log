@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.1415926-2.3-0.9997.5 (MiKTeX 2.9) (preloaded format=xelatex 2020.7.11)  12 OCT 2022 08:10
+This is XeTeX, Version 3.1415926-2.3-0.9997.5 (MiKTeX 2.9) (preloaded format=xelatex 2020.7.11)  13 NOV 2022 22:17
 entering extended mode
 **readme.tex
 (C:\Users\10679\Documents\GitHub\compnet\reports\readme.tex
@@ -1435,18 +1435,17 @@ Requested font "cmr8" at 8.0pt
  -> cmr8
 Requested font "cmr6" at 6.0pt
  -> cmr6
- [1
-
-]
 Requested font "[lmroman12-regular]:mapping=tex-text" at 12.0pt
  -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmroman12-regular.otf
 Requested font "[lmroman12-bold]:mapping=tex-text" at 12.0pt
  -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmroman12-bold.otf
- [2]
+ [1
+
+]
 Requested font "[lmroman10-bold]:mapping=tex-text" at 10.95pt
  -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmroman10-bold.otf
- [3] [4] [5]
-Overfull \hbox (11.1884pt too wide) in paragraph at lines 356--357
+ [2] [3] [4] [5]
+Overfull \hbox (11.1884pt too wide) in paragraph at lines 337--338
 []\EU1/lmtt/m/n/10.95 void setNextHopMac(uint32_t dst, struct in_addr mask, std
 ::pair<macAddress,int>
  []
@@ -1488,64 +1487,74 @@ Requested font "SimHei/I/ICU" at 10.95pt
 Requested font "SimSun/ICU:script=latn;language=DFLT;mapping=tex-text;" at 10.9
 5pt
  -> C:/Windows/Fonts/simsun.ttc
- [8] (C:\CTEX\MiKTeX\tex\latex\listings\lstlang1.sty
+ [8]
+Overfull \hbox (3.40297pt too wide) in paragraph at lines 534--535
+[]\EU1/lmtt/m/n/10.95 portal.h \EU1/lmr/m/n/10.95 This implements the socket us
+ing \EU1/lmtt/m/n/10.95 socketNode\EU1/lmr/m/n/10.95 . And we also implement \E
+U1/lmtt/m/n/10.95 socketManager\EU1/lmr/m/n/10.95 ,
+ []
+
+
+Overfull \hbox (23.8028pt too wide) in paragraph at lines 536--537
+\EU1/lmr/m/n/10.95 connections which is waiting for accept(\EU1/lmtt/m/n/10.95 
+trap_ip_frame,trap_tcp_frame,trap_count,trap_bound\EU1/lmr/m/n/10.95 );
+ []
+
+[9]
+Overfull \hbox (1.47458pt too wide) in paragraph at lines 546--547
+[]\EU1/lmtt/m/n/10.95 socket.h \EU1/lmr/m/n/10.95 This gives all the required i
+nterfaces(but I failed to hijack them). Except \EU1/lmtt/m/n/10.95 getaddrinfo,
+
+ []
+
+(C:\CTEX\MiKTeX\tex\latex\listings\lstlang1.sty
 File: lstlang1.sty 2004/09/05 1.3 listings language file
 )
 (C:\CTEX\MiKTeX\tex\latex\listings\lstlang1.sty
 File: lstlang1.sty 2004/09/05 1.3 listings language file
-) [9]
-File: ../lab-netstack-premium-master/checkpoints/CP3.png Graphic file (type QTm
+) [10]
+File: ../lab-netstack-premium-master/checkpoints/CP7.png Graphic file (type QTm
 )
 
-<use  "../lab-netstack-premium-master/checkpoints/CP3.png" >
-Requested font "[lmmono8-regular]" at 8.0pt
- -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmmono8-regular.otf
-Requested font "[lmmono8-regular]" at 6.0pt
- -> C:/CTEX/MiKTeX/fonts/opentype/public/lm/lmmono8-regular.otf
- [10]
-File: ../lab-netstack-premium-master/checkpoints/CP4-1.png Graphic file (type Q
-Tm)
+<use  "../lab-netstack-premium-master/checkpoints/CP7.png" > [11]
+File: ../lab-netstack-premium-master/checkpoints/test1-connection.png Graphic f
+ile (type QTm)
 
-<use  "../lab-netstack-premium-master/checkpoints/CP4-1.png" >
-File: ../lab-netstack-premium-master/checkpoints/CP4-2.png Graphic file (type Q
-Tm)
+<use  "../lab-netstack-premium-master/checkpoints/test1-connection.png" >
+Overfull \hbox (19.80597pt too wide) in paragraph at lines 638--639
+\EU1/lmr/m/n/10.95 shown below and the packet captured in \EU1/lmtt/m/n/10.95 v
+eth2-1 \EU1/lmr/m/n/10.95 is provided in \EU1/lmtt/m/n/10.95 checkpoints/test2-
+retransmission.txt 
+ []
 
-<use  "../lab-netstack-premium-master/checkpoints/CP4-2.png" >
-File: ../lab-netstack-premium-master/checkpoints/CP4-3.png Graphic file (type Q
-Tm)
+[12]
+File: ../lab-netstack-premium-master/checkpoints/test2-retransmission.png Graph
+ic file (type QTm)
 
-<use  "../lab-netstack-premium-master/checkpoints/CP4-3.png" > [11] [12]
-File: ../lab-netstack-premium-master/checkpoints/CP5-1.png Graphic file (type Q
-Tm)
+<use  "../lab-netstack-premium-master/checkpoints/test2-retransmission.png" >
+File: ../lab-netstack-premium-master/checkpoints/test3-retransmission.png Graph
+ic file (type QTm)
 
-<use  "../lab-netstack-premium-master/checkpoints/CP5-1.png" >
-File: ../lab-netstack-premium-master/checkpoints/CP5-2.png Graphic file (type Q
-Tm)
+<use  "../lab-netstack-premium-master/checkpoints/test3-retransmission.png" >
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 660.
 
-<use  "../lab-netstack-premium-master/checkpoints/CP5-2.png" > [13]
-File: ../lab-netstack-premium-master/checkpoints/CP6.png Graphic file (type QTm
-)
-
-<use  "../lab-netstack-premium-master/checkpoints/CP6.png" >
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 713.
- [14] [15]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 713.
-
-(C:\Users\10679\Documents\GitHub\compnet\reports\readme.aux)
-Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 713.
-Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 713.
+[13]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 660.
+ (C:\Users\10679\Documents\GitHub\compnet\reports\readme.aux)
+Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 660.
+Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 660.
 
 
 LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 32880 strings out of 430478
- 620058 string characters out of 3191502
- 704355 words of memory out of 3000000
- 35464 multiletter control sequences out of 15000+200000
- 11237 words of font info for 64 fonts, out of 3000000 for 9000
+ 32869 strings out of 430478
+ 619887 string characters out of 3191502
+ 700366 words of memory out of 3000000
+ 35459 multiletter control sequences out of 15000+200000
+ 11221 words of font info for 62 fonts, out of 3000000 for 9000
  14 hyphenation exceptions out of 8191
  57i,12n,97p,848b,959s stack positions out of 5000i,500n,10000p,200000b,50000s
 
-Output written on readme.pdf (15 pages).
+Output written on readme.pdf (13 pages).

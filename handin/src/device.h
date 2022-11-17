@@ -1,15 +1,14 @@
 /* *
-* @file device.cpp
+* @file device.h
 * @brief Library supporting network device management .
 */
 
 #ifndef DEVICE_H
 #define DEVICE_H
 #include <pcap/pcap.h>
-#include <cstring>
-#include <cstdlib>
+#include <string.h>
+#include <stdlib.h>
 #include <algorithm>
-#include <vector>
 #include "type.h"
 #include "macro.h"
 #include "constant.h"
@@ -58,19 +57,27 @@ struct DeviceNode{
     int index;                           //The index of the device
     
     DeviceNode(){
-        device_names = 0;
+        device_names = NULL;
         receive_handler = NULL;
         send_handler = NULL;
         ip_callback = NULL;
         callback = NULL;
     }
     ~DeviceNode(){
-        if (device_names != NULL)
+        //fprintf(stderr,"device.h, dn\n");
+        if (device_names != NULL){
             delete[] device_names;
-        if (receive_handler != NULL)
+            device_names = NULL;
+        }
+        if (receive_handler != NULL){
             pcap_close(receive_handler);
-        if (send_handler != NULL)
+            receive_handler = NULL;
+        }
+        if (send_handler != NULL){
             pcap_close(send_handler);
+            send_handler = NULL;
+        }
+        //fprintf(stderr,"device.h, dn\n");
     }
 
     /* *
@@ -164,9 +171,14 @@ struct DeviceManager{
         device_list = NULL;
     }
     ~DeviceManager(){
-        for (int i = 0; i < device_count; i++)
-            delete device_list[i];
-        delete[] device_list;
+        //fprintf(stderr,"device.h, dm\n");
+        if (device_list != NULL){
+            for (int i = 0; i < device_count; i++)
+                delete device_list[i];
+            delete[] device_list;
+            device_list = NULL;
+        }
+        //fprintf(stderr,"device.h, dm\n");
     }
     /* *
     * Return the pointer of the index-th DeviceNode
